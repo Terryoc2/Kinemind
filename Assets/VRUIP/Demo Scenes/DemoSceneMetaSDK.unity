@@ -3163,6 +3163,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2899156389253411253, guid: ef0a527a8731bc8438dd5e549a278f21,
         type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2899156389253411253, guid: ef0a527a8731bc8438dd5e549a278f21,
+        type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
@@ -9902,6 +9907,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9021661640666677619, guid: 5cb37f59bf2d9cc47804254486d8982e,
         type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661640666677619, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -9909,6 +9919,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661640666677622, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: backgroundColor.b
+      value: 0.8679245
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661640666677622, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: backgroundColor.g
+      value: 0.819256
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661640666677622, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: backgroundColor.r
+      value: 0.06959773
       objectReference: {fileID: 0}
     - target: {fileID: 9021661640666677623, guid: 5cb37f59bf2d9cc47804254486d8982e,
         type: 3}
@@ -9998,7 +10023,7 @@ PrefabInstance:
     - target: {fileID: 9021661640666677623, guid: 5cb37f59bf2d9cc47804254486d8982e,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 1.715
+      value: 3.85
       objectReference: {fileID: 0}
     - target: {fileID: 9021661640666677623, guid: 5cb37f59bf2d9cc47804254486d8982e,
         type: 3}
@@ -10015,6 +10040,36 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9021661640995755493, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661642169789417, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661642169789419, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 0.6117647
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661642169789419, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0.84518915
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661642169789419, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.8679245
+      objectReference: {fileID: 0}
+    - target: {fileID: 9021661642169789419, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 0.08597365
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -10026,7 +10081,11 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1471597414}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9021661640666677619, guid: 5cb37f59bf2d9cc47804254486d8982e,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 644489728}
   m_SourcePrefab: {fileID: 100100000, guid: 5cb37f59bf2d9cc47804254486d8982e, type: 3}
 --- !u!224 &644489724 stripped
 RectTransform:
@@ -10046,12 +10105,46 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 644489723}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 644489727}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa504239bff4e1e4ba7487912b30c582, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &644489727 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9021661640666677619, guid: 5cb37f59bf2d9cc47804254486d8982e,
+    type: 3}
+  m_PrefabInstance: {fileID: 644489723}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &644489728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 644489727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee10491ef6d5d1d49a270cf6b09bdc19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _enableMipmapping: 0
+  _dynamicResolution: 1
+  _redrawResolutionThreshold: 2147483647
+  rectTransform: {fileID: 644489724}
+  maxTextureSize: 2048
+  manualRedraw: 0
+  renderInterval: 1
+  renderIntervalFrameOffset: 0
+  expensive: 0
+  layer: 5
+  opacity: 2
+  shape: 0
+  curveRadius: 1
+  overlapMask: 0
+  overlayType: 1
+  _overlayEnabled: 1
 --- !u!1001 &655283942
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19442,10 +19535,7 @@ PrefabInstance:
     - target: {fileID: 1324653313682529973, guid: d0f5d921837d4d74ab139feae0f837f5,
         type: 3}
       propertyPath: m_text
-      value: This text started typing because we pressed the play button. That's
-        because the button had the "StartTyping" function attached to it. The typing
-        speed on this text is also faster. Lastly, this text does not pause longer
-        on periods.
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1324653313682529973, guid: d0f5d921837d4d74ab139feae0f837f5,
         type: 3}
@@ -19567,6 +19657,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Second Text
       objectReference: {fileID: 0}
+    - target: {fileID: 1324653313682529975, guid: d0f5d921837d4d74ab139feae0f837f5,
+        type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -19599,7 +19694,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1378132675}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Header
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -21078,7 +21173,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1471597414}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25681,7 +25776,8 @@ PrefabInstance:
     - target: {fileID: 1324653313682529973, guid: d0f5d921837d4d74ab139feae0f837f5,
         type: 3}
       propertyPath: m_text
-      value: Typing Animation
+      value: "\n\n\n\n\n\n\nWELCOME TO SIMULACI\xD3N CLINICA TRANSFUSIONAL BY BIOXR
+        INMERSIVE LAB"
       objectReference: {fileID: 0}
     - target: {fileID: 1324653313682529973, guid: d0f5d921837d4d74ab139feae0f837f5,
         type: 3}
@@ -25814,6 +25910,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Title
+      objectReference: {fileID: 0}
+    - target: {fileID: 1324653313682529975, guid: d0f5d921837d4d74ab139feae0f837f5,
+        type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -27078,11 +27179,7 @@ PrefabInstance:
     - target: {fileID: 1324653313682529973, guid: d0f5d921837d4d74ab139feae0f837f5,
         type: 3}
       propertyPath: m_text
-      value: This is an example of the typing animation that can be used with any
-        Text prefab from this package. All you have to do is enable the "Typing On
-        Awake" property from the TextController. You can also set the speed of typing
-        if you want to type fast or slow depending on your use case. Press the button
-        to call the next text animation!
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1324653313682529973, guid: d0f5d921837d4d74ab139feae0f837f5,
         type: 3}
@@ -27203,6 +27300,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: First Text
+      objectReference: {fileID: 0}
+    - target: {fileID: 1324653313682529975, guid: d0f5d921837d4d74ab139feae0f837f5,
+        type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
