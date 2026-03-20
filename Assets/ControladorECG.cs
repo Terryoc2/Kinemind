@@ -1,59 +1,52 @@
 using UnityEngine;
-using ChartAndGraph; // Si esto sale en rojo, ignora por ahora y guarda el archivo
-using System.Collections.Generic;
+using System.Collections;
+using ChartAndGraph; 
 
-public class ControladorECG : MonoBehaviour
+public class ECGMonitor : MonoBehaviour
 {
-    [Header("Asignaciones")]
-    public GraphChart grafico; 
-    public TextAsset archivoCSV;
+    [Header("Referencias")]
+    public GraphChart graph;
+    public TextAsset ecgFile; // Aquí arrastras tu archivo ecg.csv
 
     [Header("Configuración")]
-    public string nombreCategoria = "ECG"; 
-    public float velocidadMuestreo = 0.05f; 
-
-    private List<float> datosY = new List<float>();
-    private int indiceActual = 0;
-    private float tiempoX = 0f;
-    private float cronometro = 0f;
+    public string categoryName = "ECG"; // El nombre en el Data del inspector
+    public float updateDelay = 0.02f; // El ECG suele ser más rápido que el oxígeno
 
     void Start()
     {
-        if (archivoCSV != null)
+        if (graph == null || ecgFile == null)
         {
-            // Leemos el CSV
-            string[] lineas = archivoCSV.text.Split(new char[] { '\n', '\r' }, System.StringSplitOptions.RemoveEmptyEntries);
-            foreach (string linea in lineas)
-            {
-                if (float.TryParse(linea, out float valor))
-                    datosY.Add(valor);
-            }
-            Debug.Log("Datos cargados: " + datosY.Count);
+            Debug.LogError("Falta asignar el Graph o el archivo ECG en el Inspector");
+            return;
         }
+
+        // Iniciamos la lectura idéntica al monitor de oxígeno
+        StartCoroutine(ReadECGCSV());
     }
 
-    void Update()
+    IEnumerator ReadECGCSV()
     {
-        if (grafico == null || datosY.Count == 0) return;
+        string[] lines = ecgFile.text.Split('\n');
 
-        cronometro += Time.deltaTime;
-        if (cronometro >= velocidadMuestreo)
+        foreach (string line in lines)
         {
-            if (indiceActual < datosY.Count)
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            string[] values = line.Split(',');
+
+            if (values.Length >= 2)
             {
-                // Enviamos el dato al gráfico
-                grafico.DataSource.AddPointToCategory(nombreCategoria, tiempoX, datosY[indiceActual]);
-                
-                tiempoX += 0.1f;
-                indiceActual++;
-                cronometro = 0f;
+                // Usamos la misma lógica de parseo que en el de oxígeno
+                if (float.TryParse(values[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float x) && 
+                    float.TryParse(values[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float y))
+                {
+                    // En el ECG normalmente no dividimos entre 100 
+                    // a menos que los valores sean muy grandes.
+                    graph.DataSource.AddPointToCategory(categoryName, x, y);
+                }
             }
-            else
-            {
-                indiceActual = 0; // Reinicia cuando termina el CSV
-                tiempoX = 0;
-                grafico.DataSource.ClearCategory(nombreCategoria); // Limpia para volver a empezar
-            }
+
+            yield return new WaitForSeconds(updateDelay);
         }
     }
 }
