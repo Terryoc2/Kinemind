@@ -8,17 +8,56 @@ public class TemperatureMonitor : MonoBehaviour
     public TextMeshProUGUI textoTemperatura; 
     public TextAsset temperatureFile; 
 
-    [Header("Configuración")]
-    public float updateDelay = 2f; // La temperatura cambia lento, cada 2 segundos está perfecto
+    [Header("Configuración CSV")]
+    public float updateDelay = 2f; 
+
+    [Header("Control de Eventos (Fiebre)")]
+    public float incrementoFiebre = 0.5f;
+    public float temperaturaMaxima = 40.5f;
+
+    // Variables internas
+    private float temperaturaActual = 36.5f; // Valor inicial seguro
+    private bool fiebreActivada = false;
 
     void Start()
     {
-        if (textoTemperatura == null || temperatureFile == null)
-        {
-            Debug.LogError("Falta asignar el Texto o el CSV de temperatura en el Inspector");
-            return;
-        }
+        if (textoTemperatura == null || temperatureFile == null) return;
+        
+        // Forzamos la primera actualización visual
+        ActualizarTexto();
         StartCoroutine(ReadTemperatureCSV());
+    }
+
+    // Esta función la llamará tu NUEVO botón físico de Meta
+    public void InducirFiebreAdversa()
+    {
+        fiebreActivada = true; // Bloqueamos el CSV
+
+        if (temperaturaActual < temperaturaMaxima)
+        {
+            temperaturaActual += incrementoFiebre;
+            ActualizarTexto();
+            Debug.Log("¡Reacción Transfusional! Temperatura forzada a: " + temperaturaActual);
+        }
+    }
+
+    private void ActualizarTexto()
+    {
+        if (textoTemperatura != null)
+        {
+            textoTemperatura.text = temperaturaActual.ToString("F1") + " °C"; 
+
+            // Control estricto de colores
+            if (temperaturaActual >= 38.0f)
+            {
+                textoTemperatura.color = Color.red; // Peligro
+            }
+            else
+            {
+                // Pon aquí el color normal de tu monitor (blanco, verde, naranja, etc.)
+                textoTemperatura.color = Color.white; 
+            }
+        }
     }
 
     IEnumerator ReadTemperatureCSV()
@@ -31,10 +70,18 @@ public class TemperatureMonitor : MonoBehaviour
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
-                if (float.TryParse(line.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float tempValue))
+                // Solo leemos del CSV si el instructor NO ha activado la fiebre
+                if (!fiebreActivada) 
                 {
-                    // ToString("F1") asegura que siempre tenga 1 decimal (ej. 36.5)
-                    textoTemperatura.text = tempValue.ToString("F1") + " °C"; 
+                    if (float.TryParse(line.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float tempValue))
+                    {
+                        // Filtramos datos basura del CSV (temperaturas irreales como 0 o 100)
+                        if (tempValue > 30.0f && tempValue < 45.0f) 
+                        {
+                            temperaturaActual = tempValue;
+                            ActualizarTexto(); 
+                        }
+                    }
                 }
 
                 yield return new WaitForSeconds(updateDelay);
@@ -42,4 +89,4 @@ public class TemperatureMonitor : MonoBehaviour
             yield return null; 
         }
     }
-}
+}   
