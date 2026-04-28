@@ -26,7 +26,7 @@ public class ControladorECG : MonoBehaviour
     {
         if (graph == null || ecgFile == null)
         {
-            Debug.LogError("Asigna el Graph y el CSV en el Inspector, Chalaco.");
+            Debug.LogError("Asigna el Graph y el CSV en el Inspector");
             return;
         }
         StartCoroutine(ReadECGCSV());

@@ -13,31 +13,65 @@ public class TemperatureMonitor : MonoBehaviour
 
     [Header("Control de Eventos (Fiebre)")]
     public float incrementoFiebre = 0.5f;
-    public float temperaturaMaxima = 40.5f;
+    public float temperaturaMaxima = 40.0f;
+    public float intervaloFiebre = 1.0f; 
+    public float temperaturaAlerta = 39.0f; 
 
-    // Variables internas
-    private float temperaturaActual = 36.5f; // Valor inicial seguro
+    private float temperaturaActual = 36.5f; 
     private bool fiebreActivada = false;
+    private Color colorInicial; 
+
+    // Guardamos la referencia de la corrutina del CSV para poder matarla
+    private Coroutine csvCoroutine;
 
     void Start()
     {
         if (textoTemperatura == null || temperatureFile == null) return;
         
-        // Forzamos la primera actualización visual
+        colorInicial = textoTemperatura.color; 
         ActualizarTexto();
-        StartCoroutine(ReadTemperatureCSV());
+        
+        // Iniciamos la lectura y guardamos el proceso
+        csvCoroutine = StartCoroutine(ReadTemperatureCSV());
     }
 
-    // Esta función la llamará tu NUEVO botón físico de Meta
     public void InducirFiebreAdversa()
     {
-        fiebreActivada = true; // Bloqueamos el CSV
-
-        if (temperaturaActual < temperaturaMaxima)
+        if (!fiebreActivada)
         {
-            temperaturaActual += incrementoFiebre;
-            ActualizarTexto();
-            Debug.Log("¡Reacción Transfusional! Temperatura forzada a: " + temperaturaActual);
+            fiebreActivada = true; 
+            
+            // 1. DETENER EL CSV: Esto evita que el monitor siga actualizándose con el archivo
+            if (csvCoroutine != null)
+            {
+                StopCoroutine(csvCoroutine);
+                csvCoroutine = null;
+            }
+
+            // 2. SETEO FIJO: Forzamos el valor inicial de la reacción
+            temperaturaActual = 36.5f;
+            ActualizarTexto(); 
+            
+            // 3. SUBIDA GRADUAL: Empezamos el incremento cada segundo
+            StartCoroutine(SubirTemperaturaGradualmente()); 
+            Debug.Log("Fiebre Iniciada: CSV detenido. Monitor seteado a 36.5 °C.");
+        }
+    }
+
+    IEnumerator SubirTemperaturaGradualmente()
+    {
+        // Mientras no lleguemos a 40...
+        while (temperaturaActual < temperaturaMaxima)
+        {
+            // Espera exactamente 1 segundo (intervaloFiebre)
+            yield return new WaitForSeconds(intervaloFiebre); 
+            
+            temperaturaActual += incrementoFiebre; // +0.5
+            
+            if (temperaturaActual > temperaturaMaxima)
+                temperaturaActual = temperaturaMaxima;
+
+            ActualizarTexto(); 
         }
     }
 
@@ -47,15 +81,14 @@ public class TemperatureMonitor : MonoBehaviour
         {
             textoTemperatura.text = temperaturaActual.ToString("F1") + " °C"; 
 
-            // Control estricto de colores
-            if (temperaturaActual >= 38.0f)
+            // Rojo solo a partir de 39.0 grados
+            if (temperaturaActual >= temperaturaAlerta)
             {
-                textoTemperatura.color = Color.red; // Peligro
+                textoTemperatura.color = Color.red; 
             }
             else
             {
-                // Pon aquí el color normal de tu monitor (blanco, verde, naranja, etc.)
-                textoTemperatura.color = Color.white; 
+                textoTemperatura.color = colorInicial; 
             }
         }
     }
@@ -64,29 +97,26 @@ public class TemperatureMonitor : MonoBehaviour
     {
         string[] lines = temperatureFile.text.Split('\n');
         
-        while (true) 
+        while (!fiebreActivada) 
         {
             foreach (string line in lines)
             {
+                // Si se activa la fiebre mientras el bucle está a la mitad, salimos de inmediato
+                if (fiebreActivada) yield break;
+
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
-                // Solo leemos del CSV si el instructor NO ha activado la fiebre
-                if (!fiebreActivada) 
+                if (float.TryParse(line.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float tempValue))
                 {
-                    if (float.TryParse(line.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float tempValue))
+                    if (tempValue > 30.0f && tempValue < 45.0f) 
                     {
-                        // Filtramos datos basura del CSV (temperaturas irreales como 0 o 100)
-                        if (tempValue > 30.0f && tempValue < 45.0f) 
-                        {
-                            temperaturaActual = tempValue;
-                            ActualizarTexto(); 
-                        }
+                        temperaturaActual = tempValue;
+                        ActualizarTexto(); 
                     }
                 }
-
                 yield return new WaitForSeconds(updateDelay);
             }
             yield return null; 
         }
     }
-}   
+}
