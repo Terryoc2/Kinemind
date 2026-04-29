@@ -17,8 +17,15 @@ public class ControladorECG : MonoBehaviour
     public float tiempoMaximoPantalla = 5f;
 
     [Header("Lógica de BPM (Cálculo Médico)")]
+    [Tooltip("Valor fijo que se muestra al iniciar la simulación")]
+    public int bpmValorInicial = 75; 
+    
+    [Tooltip("No se mostrarán valores por debajo de este límite")]
+    public float bpmMinimo = 65f;
+
     [Tooltip("Como tus picos llegan a 70, un umbral de 40-50 es ideal")]
     public float umbralDeteccion = 50f; 
+    
     private float tiempoUltimoPico = 0f;
     private bool puedeDetectar = true;
 
@@ -29,6 +36,13 @@ public class ControladorECG : MonoBehaviour
             Debug.LogError("Asigna el Graph y el CSV en el Inspector");
             return;
         }
+
+        // Seteamos el valor fijo inicial
+        if (textBPM != null)
+        {
+            textBPM.text = bpmValorInicial.ToString() + " Bpm";
+        }
+
         StartCoroutine(ReadECGCSV());
     }
 
@@ -47,11 +61,7 @@ public class ControladorECG : MonoBehaviour
 
                 if (float.TryParse(line.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float yValue))
                 {
-                    // Dibujamos el punto en la gráfica
                     graph.DataSource.AddPointToCategory(categoryName, currentTimeX, yValue);
-                    Debug.Log("Valor recibido: " + yValue);
-                    
-                    // Calculamos los BPM detectando el Pico R
                     CalcularBPM(yValue, tiempoAbsoluto);
 
                     currentTimeX += updateDelay;
@@ -59,14 +69,12 @@ public class ControladorECG : MonoBehaviour
                     contadorFrame++;
                 }
 
-                // Efecto de barrido (Sweep)
                 if (currentTimeX >= tiempoMaximoPantalla)
                 {
                     currentTimeX = 0f;
                     graph.DataSource.ClearCategory(categoryName);
                 }
 
-                // Control de rendimiento
                 if (contadorFrame >= puntosPorFrame)
                 {
                     yield return null;
@@ -79,19 +87,18 @@ public class ControladorECG : MonoBehaviour
 
     void CalcularBPM(float valorY, float tiempoActual)
     {
-        // Detectamos si la onda cruza el umbral (Pico R)
         if (valorY > umbralDeteccion && puedeDetectar)
         {
             float intervalo = tiempoActual - tiempoUltimoPico;
 
-            // Filtro para evitar detectar el mismo pico varias veces (máximo 200 BPM)
             if (intervalo > 0.3f) 
             {
                 float bpm = 60f / intervalo;
                 
-                if (textBPM != null)
+                // FILTRO DE SEGURIDAD: Solo actualiza si es 65 o más
+                if (textBPM != null && bpm >= bpmMinimo)
                 {
-                    textBPM.text = Mathf.RoundToInt(bpm).ToString();
+                    textBPM.text = Mathf.RoundToInt(bpm).ToString() + " Bpm";
                 }
 
                 tiempoUltimoPico = tiempoActual;
@@ -103,7 +110,6 @@ public class ControladorECG : MonoBehaviour
 
     IEnumerator ResetDeteccion()
     {
-        // Esperamos un momento para que la onda baje del umbral
         yield return new WaitForSeconds(0.2f);
         puedeDetectar = true;
     }
