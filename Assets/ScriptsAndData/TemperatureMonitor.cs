@@ -4,35 +4,49 @@ using TMPro;
 
 public class TemperatureMonitor : MonoBehaviour
 {
-    [Header("Referencias")]
+    [Header("Referencias Monitor")]
     public TextMeshProUGUI textoTemperatura; 
     public TextAsset temperatureFile; 
 
-    [Header("Configuración CSV")]
-    public float updateDelay = 2f; 
+    [Header("Referencias Paciente")]
+    public Animator pacienteAnimator;
+    public SkinnedMeshRenderer rendererCabeza;
 
-    [Header("Control de Eventos (Fiebre)")]
-    public float incrementoFiebre = 0.5f;
+    [Header("Configuración Fiebre (Animación)")]
+    public string nombreEstadoAnimacionFiebre = "FiebreSevera";
+
+    [Header("Configuración Fiebre (Lógica y Visual)")]
+    public float updateDelay = 2f; 
     public float temperaturaMaxima = 40.0f;
+    public float incrementoFiebre = 0.5f;
     public float intervaloFiebre = 1.0f; 
-    public float temperaturaAlerta = 39.0f; 
+    
+    [Tooltip("Temperatura a la que empieza a aparecer el rubor")]
+    public float tempInicioRubor = 38.0f; 
+    
+    [Tooltip("Temperatura a la que el rubor llega a su máximo")]
+    public float tempMaxRubor = 40.0f;
+    
+    [Tooltip("Temperatura a la que el monitor se pone rojo")]
+    public float temperaturaAlerta = 39.0f;
 
     private float temperaturaActual = 36.5f; 
     private bool fiebreActivada = false;
-    private Color colorInicial; 
-
-    // Guardamos la referencia de la corrutina del CSV para poder matarla
+    private Color colorInicialTexto; 
     private Coroutine csvCoroutine;
+
+    // Propiedad del Shader URP que regula la opacidad/intensidad del detalle
+    private const string PROPIEDAD_INTENSIDAD_DETALLE = "_DetailAlbedoMapScale";
 
     void Start()
     {
-        if (textoTemperatura == null || temperatureFile == null) return;
+        if (textoTemperatura != null) colorInicialTexto = textoTemperatura.color; 
         
-        colorInicial = textoTemperatura.color; 
-        ActualizarTexto();
+        // Asegurarnos de que el rubor empiece en 0 (totalmente invisible)
+        ActualizarIntensidadRubor(0f);
         
-        // Iniciamos la lectura y guardamos el proceso
-        csvCoroutine = StartCoroutine(ReadTemperatureCSV());
+        ActualizarTextoYVisuales();
+        if (temperatureFile != null) csvCoroutine = StartCoroutine(ReadTemperatureCSV());
     }
 
     public void InducirFiebreAdversa()
@@ -40,70 +54,66 @@ public class TemperatureMonitor : MonoBehaviour
         if (!fiebreActivada)
         {
             fiebreActivada = true; 
-            
-            // 1. DETENER EL CSV: Esto evita que el monitor siga actualizándose con el archivo
-            if (csvCoroutine != null)
+            if (csvCoroutine != null) StopCoroutine(csvCoroutine);
+
+            if (pacienteAnimator != null)
             {
-                StopCoroutine(csvCoroutine);
-                csvCoroutine = null;
+                pacienteAnimator.CrossFadeInFixedTime(nombreEstadoAnimacionFiebre, 0.5f);
             }
 
-            // 2. SETEO FIJO: Forzamos el valor inicial de la reacción
             temperaturaActual = 36.5f;
-            ActualizarTexto(); 
-            
-            // 3. SUBIDA GRADUAL: Empezamos el incremento cada segundo
+            ActualizarTextoYVisuales(); 
             StartCoroutine(SubirTemperaturaGradualmente()); 
-            Debug.Log("Fiebre Iniciada: CSV detenido. Monitor seteado a 36.5 °C.");
         }
     }
 
     IEnumerator SubirTemperaturaGradualmente()
     {
-        // Mientras no lleguemos a 40...
         while (temperaturaActual < temperaturaMaxima)
         {
-            // Espera exactamente 1 segundo (intervaloFiebre)
             yield return new WaitForSeconds(intervaloFiebre); 
-            
-            temperaturaActual += incrementoFiebre; // +0.5
-            
-            if (temperaturaActual > temperaturaMaxima)
-                temperaturaActual = temperaturaMaxima;
+            temperaturaActual += incrementoFiebre; 
+            if (temperaturaActual > temperaturaMaxima) temperaturaActual = temperaturaMaxima;
 
-            ActualizarTexto(); 
+            ActualizarTextoYVisuales(); 
         }
     }
 
-    private void ActualizarTexto()
+    private void ActualizarTextoYVisuales()
     {
         if (textoTemperatura != null)
         {
             textoTemperatura.text = temperaturaActual.ToString("F1") + " °C"; 
+            
+            // El monitor sigue saltando a rojo solo a los 39°C
+            textoTemperatura.color = (temperaturaActual >= temperaturaAlerta) ? Color.red : colorInicialTexto; 
+        }
 
-            // Rojo solo a partir de 39.0 grados
-            if (temperaturaActual >= temperaturaAlerta)
-            {
-                textoTemperatura.color = Color.red; 
-            }
-            else
-            {
-                textoTemperatura.color = colorInicial; 
-            }
+        // --- LÓGICA PROGRESIVA DEL RUBOR ---
+        // InverseLerp calcula automáticamente un valor entre 0 y 1 basado en la temperatura actual
+        float intensidad = Mathf.InverseLerp(tempInicioRubor, tempMaxRubor, temperaturaActual);
+        ActualizarIntensidadRubor(intensidad);
+    }
+
+    private void ActualizarIntensidadRubor(float intensidad)
+    {
+        if (rendererCabeza != null && rendererCabeza.material != null)
+        {
+            // Le pasamos el nivel de intensidad (0.0 a 1.0) directamente al material
+            rendererCabeza.material.SetFloat(PROPIEDAD_INTENSIDAD_DETALLE, intensidad);
         }
     }
 
     IEnumerator ReadTemperatureCSV()
     {
+        if (temperatureFile == null) yield break;
         string[] lines = temperatureFile.text.Split('\n');
         
         while (!fiebreActivada) 
         {
             foreach (string line in lines)
             {
-                // Si se activa la fiebre mientras el bucle está a la mitad, salimos de inmediato
                 if (fiebreActivada) yield break;
-
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 if (float.TryParse(line.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float tempValue))
@@ -111,7 +121,7 @@ public class TemperatureMonitor : MonoBehaviour
                     if (tempValue > 30.0f && tempValue < 45.0f) 
                     {
                         temperaturaActual = tempValue;
-                        ActualizarTexto(); 
+                        ActualizarTextoYVisuales(); 
                     }
                 }
                 yield return new WaitForSeconds(updateDelay);
