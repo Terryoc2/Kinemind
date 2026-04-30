@@ -3,87 +3,79 @@ using UnityEngine;
 public class FlujoSangreLlenadoVR : MonoBehaviour
 {
     [Header("Referencias Físicas")]
+    [Tooltip("El objeto de la palanca que mueves con la mano")]
     public Transform palancaMovil;
     
+    // Tus valores exactos
     public float valorLocalCerrado = 1.6921f;
     public float valorLocalAbierto = 1.6075f;
     
+    [Tooltip("¡Corregido al eje Y!")]
     public bool usarEjeY = true; 
 
     [Header("Referencias Visuales")]
+    [Tooltip("El MeshRenderer de tu Via_2_sangre")]
     public Renderer tuboRenderer;
+    
+    [Tooltip("Velocidad a la que avanza la sangre por el tubo")]
     public float velocidadFlujo = 0.5f;
 
-    [Header("Ajustes de Llenado")]
-    [Tooltip("Controla el tamaño de la parte invisible. (1.0 = totalmente invisible)")]
-    public float escalaInvisible = 1.0f; 
+    [Header("Ajustes de Textura (Opcionales)")]
+    [Tooltip("Ajusta esto si la sangre no arranca exactamente en la punta de la bolsa (0.5 = mitad invisible)")]
+    public float fraccionInvisibleInicial = 0.5f; 
 
-    [Tooltip("Activa esto si la sangre se llena hacia atrás (de la mano a la bolsa)")]
-    public bool invertirLlenado = false;
-
-    // Guardamos el material para no buscarlo en cada Update
-    private Material tuboMaterial;
+    // Variables internas
+    private float desplazamientoTextura; 
+    
+    // ¡LA CORRECCIÓN CRÍTICA! Variable para guardar el material una sola vez
+    private Material tuboMaterialGuardado; 
 
     void Start()
     {
+        // Reseteamos el desplazamiento para que el tubo empiece vacío
         if (tuboRenderer != null)
         {
-            // Usamos .material para asegurar que modificamos la instancia única de este objeto
-            tuboMaterial = tuboRenderer.material;
+            // CLONAMOS Y GUARDAMOS EL MATERIAL SOLO AQUÍ, UNA ÚNICA VEZ
+            tuboMaterialGuardado = tuboRenderer.material;
             
-            // Ponemos el tubo totalmente vacío al inicio
-            ActualizarLlenado(0f);
+            desplazamientoTextura = 0f;
+            SetTextureUVs(tuboMaterialGuardado, fraccionInvisibleInicial, desplazamientoTextura);
         }
     }
 
     void Update()
     {
-        if (palancaMovil == null || tuboMaterial == null) return;
+        // Revisamos que el material guardado exista
+        if (palancaMovil == null || tuboMaterialGuardado == null) return;
 
-        // Misma lectura de tu script original
+        // 1. Calculamos la apertura de la palanca (¡AHORA LEE EL EJE Y!)
         float posicionActual = usarEjeY ? palancaMovil.localPosition.y : palancaMovil.localPosition.z;
         float porcentajeApertura = Mathf.InverseLerp(valorLocalCerrado, valorLocalAbierto, posicionActual);
 
-        // Si la palanca está abierta, avanzamos el llenado
-        if (porcentajeApertura > 0.05f) 
+        // 2. Si la palanca está abierta, movemos la textura
+        if (porcentajeApertura > 0.05f) // Zona muerta del 5%
         {
-            // Calculamos cuánto avanzar en base a la velocidad y el tiempo
-            float avanceLlenado = (velocidadFlujo * porcentajeApertura) * Time.deltaTime;
+            // Avanzamos el offset para que la sangre baje
+            desplazamientoTextura += (velocidadFlujo * porcentajeApertura) * Time.deltaTime;
 
-            // Actualizamos el efecto de llenado
-            ActualizarLlenado(avanceLlenado);
+            // Calculamos el límite para que la sangre se detenga al llegar a la mano
+            float offsetMaximo = 1.0f - fraccionInvisibleInicial;
+            if (desplazamientoTextura > offsetMaximo)
+            {
+                desplazamientoTextura = offsetMaximo; 
+            }
+
+            // 3. ¡USAMOS EL MATERIAL GUARDADO EN LUGAR DE tuboRenderer.material!
+            SetTextureUVs(tuboMaterialGuardado, fraccionInvisibleInicial, desplazamientoTextura);
         }
     }
 
-    private void ActualizarLlenado(float avance)
+    private void SetTextureUVs(Material material, float scale, float offset)
     {
-        // Vector4 internamente en Unity es: X=TilingX, Y=TilingY, Z=OffsetX, W=OffsetY
-        // Según tu video, el mapeo sigue el eje Y (vertical)
-        Vector4 uvSettings = tuboMaterial.GetVector("_BaseMap_ST");
-        
-        // La lógica para el efecto de llenado es:
-        // Offset Y (W) aumenta para desplazar la parte invisible hacia afuera
-        // Tiling Y (Y) disminuye proporcionalmente para "encoger" la parte invisible, revelando la sangre roja detrás
-
-        if (!invertirLlenado)
-        {
-            uvSettings.w += avance;
-            uvSettings.y = escalaInvisible - uvSettings.w;
-        }
-        else
-        {
-            // Lógica inversa
-            uvSettings.w -= avance;
-            uvSettings.y = escalaInvisible + uvSettings.w;
-        }
-
-        // Limitamos para no pasarnos del tamaño total
-        uvSettings.y = Mathf.Max(0.0f, uvSettings.y); // Tiling no puede ser negativo
-        uvSettings.w = Mathf.Clamp(uvSettings.w, -escalaInvisible, escalaInvisible); // Limitamos el offset
-
-        // Si el tubo está lleno, detenemos el efecto
-        if (uvSettings.y == 0.0f) return;
-
-        tuboMaterial.SetVector("_BaseMap_ST", uvSettings);
+        // Modificamos el Tiling (Y) y el Offset (W) internos de Unity
+        Vector4 uvSettings = material.GetVector("_BaseMap_ST");
+        uvSettings.y = scale; 
+        uvSettings.w = offset; 
+        material.SetVector("_BaseMap_ST", uvSettings);
     }
 }
