@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -26,6 +27,8 @@ public class MemoryBoxTarget : MonoBehaviour
     private bool solved;
     private Material feedbackMaterial;
     private Coroutine wrongRoutine;
+    private float nextCheckTime;
+    private const float RepeatCheckDelay = 0.25f;
 
     private void Awake()
     {
@@ -43,17 +46,45 @@ public class MemoryBoxTarget : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (solved || manager == null)
+        RevisarEntrada(other);
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (Time.time < nextCheckTime)
+        {
+            return;
+        }
+
+        RevisarEntrada(other);
+    }
+
+    private void RevisarEntrada(Collider other)
+    {
+        if (manager == null)
         {
             return;
         }
 
         MemoryGem gem = other.GetComponentInParent<MemoryGem>();
 
-        if (gem != null)
+        if (gem == null)
         {
-            manager.IntentarColocar(this, gem);
+            return;
         }
+
+        if (solved)
+        {
+            if (!EsCorrecta(gem))
+            {
+                gem.VolverAlInicio();
+            }
+
+            return;
+        }
+
+        nextCheckTime = Time.time + RepeatCheckDelay;
+        manager.IntentarColocar(this, gem);
     }
 
     public void Configurar(MemoryLevel1Manager levelManager, MemoryGem gem, int orderNumber)
@@ -95,7 +126,22 @@ public class MemoryBoxTarget : MonoBehaviour
 
     public bool EsCorrecta(MemoryGem gem)
     {
-        return expectedGem == gem;
+        if (expectedGem == null || gem == null)
+        {
+            return false;
+        }
+
+        if (expectedGem == gem)
+        {
+            return true;
+        }
+
+        return string.Equals(expectedGem.NombreVisible, gem.NombreVisible, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public string NombreEsperado
+    {
+        get { return expectedGem != null ? expectedGem.NombreVisible : "sin figura"; }
     }
 
     public void MarcarCorrecta()

@@ -142,6 +142,7 @@ public class MemoryLevel1Manager : MonoBehaviour
             if (i < count)
             {
                 boxTargets[i].Configurar(this, currentPattern[i], i + 1);
+                Debug.Log($"Caja {boxTargets[i].gameObject.name} espera {currentPattern[i].NombreVisible}");
             }
             else
             {
@@ -191,7 +192,7 @@ public class MemoryLevel1Manager : MonoBehaviour
 
         if (target.EsCorrecta(gem))
         {
-            Debug.Log("Correcto");
+            Debug.Log($"Correcto: {gem.NombreVisible} en {target.gameObject.name}");
 
             if (audioSource != null && correctClip != null)
             {
@@ -215,7 +216,7 @@ public class MemoryLevel1Manager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Incorrecto");
+            Debug.Log($"Incorrecto: {gem.NombreVisible} en {target.gameObject.name}. Esa caja espera {target.NombreEsperado}");
 
             if (audioSource != null && wrongClip != null)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class MemoryGem : MonoBehaviour
@@ -10,13 +11,18 @@ public class MemoryGem : MonoBehaviour
     [Header("Nivel")]
     public MemoryLevel1Manager manager;
     public GameObject objectToHide;
+    public bool bloquearAgarreAlColocar = true;
 
     private Renderer gemRenderer;
     private Color originalColor;
     private Rigidbody gemRigidbody;
     private bool originalKinematic;
+    private bool originalUseGravity;
+    private Transform originalParent;
     private Vector3 spawnPosition;
     private Quaternion spawnRotation;
+    private Behaviour[] grabBehaviours;
+    private bool[] originalGrabEnabled;
 
     public string NombreVisible
     {
@@ -61,7 +67,11 @@ public class MemoryGem : MonoBehaviour
         if (gemRigidbody != null)
         {
             originalKinematic = gemRigidbody.isKinematic;
+            originalUseGravity = gemRigidbody.useGravity;
         }
+
+        originalParent = transform.parent;
+        GuardarComponentesDeAgarre();
 
         if (objectToHide == null)
         {
@@ -91,11 +101,14 @@ public class MemoryGem : MonoBehaviour
         spawnPosition = position;
         spawnRotation = transform.rotation;
 
+        transform.SetParent(originalParent, true);
+        RestaurarAgarre();
         DetenerFisica();
         transform.position = spawnPosition;
 
         if (gemRigidbody != null)
         {
+            gemRigidbody.useGravity = originalUseGravity;
             gemRigidbody.isKinematic = originalKinematic;
         }
 
@@ -104,11 +117,14 @@ public class MemoryGem : MonoBehaviour
 
     public void VolverAlInicio()
     {
+        transform.SetParent(originalParent, true);
+        RestaurarAgarre();
         DetenerFisica();
         transform.SetPositionAndRotation(spawnPosition, spawnRotation);
 
         if (gemRigidbody != null)
         {
+            gemRigidbody.useGravity = originalUseGravity;
             gemRigidbody.isKinematic = originalKinematic;
         }
     }
@@ -124,10 +140,13 @@ public class MemoryGem : MonoBehaviour
 
         if (gemRigidbody != null)
         {
+            gemRigidbody.useGravity = false;
             gemRigidbody.isKinematic = true;
         }
 
         transform.SetPositionAndRotation(snapPoint.position, snapPoint.rotation);
+        transform.SetParent(snapPoint, true);
+        BloquearAgarre();
         Highlight(false);
     }
 
@@ -145,7 +164,73 @@ public class MemoryGem : MonoBehaviour
             return;
         }
 
+        if (gemRigidbody.isKinematic)
+        {
+            return;
+        }
+
         gemRigidbody.velocity = Vector3.zero;
         gemRigidbody.angularVelocity = Vector3.zero;
+    }
+
+    private void GuardarComponentesDeAgarre()
+    {
+        Behaviour[] behaviours = GetComponents<Behaviour>();
+        List<Behaviour> found = new List<Behaviour>();
+
+        foreach (Behaviour behaviour in behaviours)
+        {
+            if (behaviour == null || behaviour == this)
+            {
+                continue;
+            }
+
+            string typeName = behaviour.GetType().Name;
+
+            if (typeName.IndexOf("Grab", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                found.Add(behaviour);
+            }
+        }
+
+        grabBehaviours = found.ToArray();
+        originalGrabEnabled = new bool[grabBehaviours.Length];
+
+        for (int i = 0; i < grabBehaviours.Length; i++)
+        {
+            originalGrabEnabled[i] = grabBehaviours[i].enabled;
+        }
+    }
+
+    private void BloquearAgarre()
+    {
+        if (!bloquearAgarreAlColocar || grabBehaviours == null)
+        {
+            return;
+        }
+
+        foreach (Behaviour behaviour in grabBehaviours)
+        {
+            if (behaviour != null)
+            {
+                behaviour.enabled = false;
+            }
+        }
+    }
+
+    private void RestaurarAgarre()
+    {
+        if (grabBehaviours == null || originalGrabEnabled == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < grabBehaviours.Length; i++)
+        {
+            if (grabBehaviours[i] != null)
+            {
+                grabBehaviours[i].enabled = originalGrabEnabled[i];
+            }
+        }
     }
 }
