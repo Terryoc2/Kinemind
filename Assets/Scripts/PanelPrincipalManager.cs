@@ -14,6 +14,9 @@ public class PanelPrincipalManager : MonoBehaviour
     public Button botonEmpezar;
     public Button botonContinuar;
 
+    [Header("Panel VR")]
+    public Transform panelInteractuableRoot;
+
     [Header("Tiempo")]
     public float segundosParaContinuar = 15f;
 
@@ -32,6 +35,11 @@ public class PanelPrincipalManager : MonoBehaviour
     public string tituloNivel2 = "Nivel 2";
     public string textoBienvenidaNivel2 = "Bienvenido";
     public string textoAlEmpezarNivel2 = "Preparate para la siguiente actividad.";
+
+    [Header("Nivel 2 Dibujo")]
+    public DrawingLevel2Manager nivel2DibujoManager;
+    public string textoInstruccionNivel2 = "Traza el dibujo siguiendo la referencia.";
+    public string textoNivel2Completado = "Trazo completado. Puedes continuar.";
 
     private Coroutine rutinaContinuar;
     private Coroutine rutinaTransicionNivel2;
@@ -53,6 +61,8 @@ public class PanelPrincipalManager : MonoBehaviour
             nivel1Manager.OcultarNivel();
         }
 
+        PrepararNivel2Dibujo();
+
         MostrarInicio();
     }
 
@@ -70,6 +80,11 @@ public class PanelPrincipalManager : MonoBehaviour
 
         actividadIniciada = false;
         actividadCompletada = false;
+
+        if (nivel2DibujoManager != null)
+        {
+            nivel2DibujoManager.OcultarNivel();
+        }
     }
 
     public void Empezar()
@@ -119,6 +134,18 @@ public class PanelPrincipalManager : MonoBehaviour
 
     public void Continuar()
     {
+        if (nivelActual == 2)
+        {
+            if (actividadCompletada)
+            {
+                textoTitulo.text = "Nivel 2 completado";
+                textoIndicacion.text = "Actividad completada.";
+                botonContinuar.interactable = false;
+            }
+
+            return;
+        }
+
         if (actividadCompletada)
         {
             IniciarTransicionNivel2();
@@ -244,7 +271,7 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (puntoPanelNivel2 != null)
         {
-            transform.SetPositionAndRotation(puntoPanelNivel2.position, puntoPanelNivel2.rotation);
+            MoverPanelInteractuable(puntoPanelNivel2.position, puntoPanelNivel2.rotation);
         }
         else if (colocarPanelFrenteAlJugador)
         {
@@ -304,8 +331,32 @@ public class PanelPrincipalManager : MonoBehaviour
         Vector3 panelPosition = mainCamera.transform.position + forward * distanciaPanelNivel2;
         panelPosition.y = mainCamera.transform.position.y + alturaPanelNivel2;
 
-        transform.position = panelPosition;
-        transform.rotation = Quaternion.LookRotation(mainCamera.transform.position - panelPosition, Vector3.up);
+        Quaternion panelRotation = Quaternion.LookRotation(mainCamera.transform.position - panelPosition, Vector3.up);
+        MoverPanelInteractuable(panelPosition, panelRotation);
+    }
+
+    private void MoverPanelInteractuable(Vector3 position, Quaternion rotation)
+    {
+        Transform panelRoot = ObtenerPanelInteractuableRoot();
+        panelRoot.SetPositionAndRotation(position, rotation);
+    }
+
+    private Transform ObtenerPanelInteractuableRoot()
+    {
+        if (panelInteractuableRoot != null)
+        {
+            return panelInteractuableRoot;
+        }
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+
+        if (canvas != null)
+        {
+            panelInteractuableRoot = canvas.transform;
+            return panelInteractuableRoot;
+        }
+
+        return transform;
     }
 
     private void MostrarInicioNivel2()
@@ -315,23 +366,111 @@ public class PanelPrincipalManager : MonoBehaviour
         actividadCompletada = false;
 
         textoTitulo.text = tituloNivel2;
-        textoIndicacion.text = textoBienvenidaNivel2;
+        textoIndicacion.text = string.IsNullOrWhiteSpace(textoBienvenidaNivel2) || textoBienvenidaNivel2 == "Bienvenido"
+            ? textoInstruccionNivel2
+            : textoBienvenidaNivel2;
 
         botonCalibrar.gameObject.SetActive(false);
         botonEmpezar.gameObject.SetActive(true);
 
         botonContinuar.gameObject.SetActive(false);
         botonContinuar.interactable = false;
+
+        if (nivel2DibujoManager != null)
+        {
+            nivel2DibujoManager.OcultarNivel();
+        }
     }
 
     private void MostrarActividadNivel2()
     {
+        actividadIniciada = true;
+        actividadCompletada = false;
+
         textoTitulo.text = tituloNivel2;
-        textoIndicacion.text = textoAlEmpezarNivel2;
+        textoIndicacion.text = textoInstruccionNivel2;
 
         botonCalibrar.gameObject.SetActive(false);
         botonEmpezar.gameObject.SetActive(false);
         botonContinuar.gameObject.SetActive(false);
         botonContinuar.interactable = false;
+
+        if (nivel2DibujoManager == null)
+        {
+            PrepararNivel2Dibujo();
+        }
+
+        if (nivel2DibujoManager != null)
+        {
+            nivel2DibujoManager.IniciarActividad();
+            gameObject.SetActive(false);
+        }
+        else
+        {
+            textoIndicacion.text = "Falta configurar Nivel2dIBUJO.";
+            botonContinuar.gameObject.SetActive(true);
+            botonContinuar.interactable = false;
+        }
+    }
+
+    public void CompletarNivel2()
+    {
+        gameObject.SetActive(true);
+
+        nivelActual = 2;
+        actividadIniciada = false;
+        actividadCompletada = true;
+
+        textoTitulo.text = tituloNivel2;
+        textoIndicacion.text = textoNivel2Completado;
+
+        botonCalibrar.gameObject.SetActive(false);
+        botonEmpezar.gameObject.SetActive(false);
+        botonContinuar.gameObject.SetActive(true);
+        botonContinuar.interactable = true;
+    }
+
+    private void PrepararNivel2Dibujo()
+    {
+        if (nivel2DibujoManager == null)
+        {
+            nivel2DibujoManager = FindObjectOfType<DrawingLevel2Manager>(true);
+        }
+
+        if (nivel2DibujoManager == null)
+        {
+            GameObject nivel2Root = BuscarObjetoEscenaPorNombre("Nivel2dIBUJO");
+
+            if (nivel2Root != null)
+            {
+                nivel2DibujoManager = nivel2Root.GetComponent<DrawingLevel2Manager>();
+
+                if (nivel2DibujoManager == null)
+                {
+                    nivel2DibujoManager = nivel2Root.AddComponent<DrawingLevel2Manager>();
+                }
+            }
+        }
+
+        if (nivel2DibujoManager != null)
+        {
+            nivel2DibujoManager.AsignarPanel(this);
+            nivel2DibujoManager.OcultarNivel();
+        }
+    }
+
+    private GameObject BuscarObjetoEscenaPorNombre(string nombre)
+    {
+        Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
+
+        foreach (Transform item in transforms)
+        {
+            if (item.name == nombre && item.gameObject.scene.IsValid())
+            {
+                return item.gameObject;
+            }
+        }
+
+        return null;
     }
 }
