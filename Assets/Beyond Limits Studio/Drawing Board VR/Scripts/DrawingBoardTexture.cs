@@ -620,7 +620,7 @@ namespace BeyondLimitsStudios
 
                 // Save the bytes to file
 
-            #if UNITY_ANDROID
+            #if UNITY_ANDROID && NATIVE_GALLERY
                 NativeGallery.SaveImageToGallery(bytes, Path.GetDirectoryName(path), Path.GetFileName(path));
             #else
                 File.WriteAllBytes(Path.Combine(path, (name + ".png")), bytes);
