@@ -14,6 +14,19 @@ public class PanelPrincipalManager : MonoBehaviour
     public Button botonEmpezar;
     public Button botonContinuar;
 
+    [Header("Botones Poke Reemplazo")]
+    public GameObject botonPokeCalibrar;
+    public GameObject botonPokeEmpezar;
+    public GameObject botonPokeContinuar;
+
+    [Header("Texto Boton Poke")]
+    public TMP_Text textoBotonPokePrincipal;
+    public Vector3 posicionTextoBotonPoke = new Vector3(0f, 0f, -0.38f);
+    public float anchoTextoBotonPoke = 1.2f;
+    public float altoTextoBotonPoke = 0.35f;
+    public float tamanoTextoBotonPoke = 0.28f;
+    public Color colorTextoBotonPoke = Color.black;
+
     [Header("Panel VR")]
     public Transform panelInteractuableRoot;
 
@@ -46,6 +59,9 @@ public class PanelPrincipalManager : MonoBehaviour
     private bool actividadIniciada = false;
     private bool actividadCompletada = false;
     private bool transicionandoNivel = false;
+    private bool botonPokeEmpezarVisible = false;
+    private bool botonPokeContinuarVisible = false;
+    private bool botonPokeContinuarInteractuable = false;
     private int nivelActual = 1;
 
     private void Start()
@@ -72,11 +88,10 @@ public class PanelPrincipalManager : MonoBehaviour
         textoTitulo.text = "JKInemind";
         textoIndicacion.text = "Bienvenido";
 
-        botonCalibrar.gameObject.SetActive(true);
-        botonEmpezar.gameObject.SetActive(true);
+        MostrarBotonCalibrar(true);
+        MostrarBotonEmpezar(true);
 
-        botonContinuar.gameObject.SetActive(false);
-        botonContinuar.interactable = false;
+        MostrarBotonContinuar(false, false);
 
         actividadIniciada = false;
         actividadCompletada = false;
@@ -89,6 +104,8 @@ public class PanelPrincipalManager : MonoBehaviour
 
     public void Empezar()
     {
+        Debug.Log("EMPEZAR EJECUTADO");
+
         if (nivelActual == 2)
         {
             MostrarActividadNivel2();
@@ -110,11 +127,10 @@ public class PanelPrincipalManager : MonoBehaviour
             textoIndicacion.text = "Memoriza el patron y coloca cada figura en su caja.";
         }
 
-        botonCalibrar.gameObject.SetActive(false);
-        botonEmpezar.gameObject.SetActive(false);
+        MostrarBotonCalibrar(false);
+        MostrarBotonEmpezar(false);
 
-        botonContinuar.gameObject.SetActive(false);
-        botonContinuar.interactable = false;
+        MostrarBotonContinuar(false, false);
 
         if (rutinaContinuar != null)
         {
@@ -124,12 +140,32 @@ public class PanelPrincipalManager : MonoBehaviour
         rutinaContinuar = StartCoroutine(MostrarContinuarDespuesDeTiempo());
     }
 
+    public void AccionarBotonPokePrincipal()
+    {
+        bool puedeContinuar = botonPokeContinuarVisible
+            && botonPokeContinuarInteractuable;
+
+        if (puedeContinuar)
+        {
+            Continuar();
+            return;
+        }
+
+        bool puedeEmpezar = botonPokeEmpezarVisible
+            || botonEmpezar == null
+            || botonEmpezar.gameObject.activeSelf;
+
+        if (puedeEmpezar)
+        {
+            Empezar();
+        }
+    }
+
     private IEnumerator MostrarContinuarDespuesDeTiempo()
     {
         yield return new WaitForSeconds(segundosParaContinuar);
 
-        botonContinuar.gameObject.SetActive(true);
-        botonContinuar.interactable = true;
+        MostrarBotonContinuar(true, true);
     }
 
     public void Continuar()
@@ -140,7 +176,7 @@ public class PanelPrincipalManager : MonoBehaviour
             {
                 textoTitulo.text = "Nivel 2 completado";
                 textoIndicacion.text = "Actividad completada.";
-                botonContinuar.interactable = false;
+                MostrarBotonContinuar(true, false);
             }
 
             return;
@@ -149,7 +185,7 @@ public class PanelPrincipalManager : MonoBehaviour
         if (actividadCompletada)
         {
             IniciarTransicionNivel2();
-            botonContinuar.interactable = false;
+            MostrarBotonContinuar(true, false);
             return;
         }
 
@@ -163,8 +199,7 @@ public class PanelPrincipalManager : MonoBehaviour
         textoTitulo.text = "Nivel 1";
         textoIndicacion.text = "Ordena y pon en las cajas";
 
-        botonContinuar.gameObject.SetActive(true);
-        botonContinuar.interactable = false;
+        MostrarBotonContinuar(true, false);
 
         if (nivel1Manager != null)
         {
@@ -178,8 +213,7 @@ public class PanelPrincipalManager : MonoBehaviour
         textoTitulo.text = "Nivel 1";
         textoIndicacion.text = "Actividad completada.";
 
-        botonContinuar.gameObject.SetActive(false);
-        botonContinuar.interactable = false;
+        MostrarBotonContinuar(false, false);
 
         IniciarTransicionNivel2();
     }
@@ -214,10 +248,9 @@ public class PanelPrincipalManager : MonoBehaviour
             nivel1Manager.OcultarNivel();
         }
 
-        botonCalibrar.gameObject.SetActive(false);
-        botonEmpezar.gameObject.SetActive(false);
-        botonContinuar.gameObject.SetActive(false);
-        botonContinuar.interactable = false;
+        MostrarBotonCalibrar(false);
+        MostrarBotonEmpezar(false);
+        MostrarBotonContinuar(false, false);
 
         textoTitulo.text = "Nivel 1 completado";
         textoIndicacion.text = "Se te transportara al siguiente nivel.";
@@ -370,11 +403,10 @@ public class PanelPrincipalManager : MonoBehaviour
             ? textoInstruccionNivel2
             : textoBienvenidaNivel2;
 
-        botonCalibrar.gameObject.SetActive(false);
-        botonEmpezar.gameObject.SetActive(true);
+        MostrarBotonCalibrar(false);
+        MostrarBotonEmpezar(true);
 
-        botonContinuar.gameObject.SetActive(false);
-        botonContinuar.interactable = false;
+        MostrarBotonContinuar(false, false);
 
         if (nivel2DibujoManager != null)
         {
@@ -390,10 +422,9 @@ public class PanelPrincipalManager : MonoBehaviour
         textoTitulo.text = tituloNivel2;
         textoIndicacion.text = textoInstruccionNivel2;
 
-        botonCalibrar.gameObject.SetActive(false);
-        botonEmpezar.gameObject.SetActive(false);
-        botonContinuar.gameObject.SetActive(false);
-        botonContinuar.interactable = false;
+        MostrarBotonCalibrar(false);
+        MostrarBotonEmpezar(false);
+        MostrarBotonContinuar(false, false);
 
         if (nivel2DibujoManager == null)
         {
@@ -408,8 +439,7 @@ public class PanelPrincipalManager : MonoBehaviour
         else
         {
             textoIndicacion.text = "Falta configurar Nivel2dIBUJO.";
-            botonContinuar.gameObject.SetActive(true);
-            botonContinuar.interactable = false;
+            MostrarBotonContinuar(true, false);
         }
     }
 
@@ -424,10 +454,9 @@ public class PanelPrincipalManager : MonoBehaviour
         textoTitulo.text = tituloNivel2;
         textoIndicacion.text = textoNivel2Completado;
 
-        botonCalibrar.gameObject.SetActive(false);
-        botonEmpezar.gameObject.SetActive(false);
-        botonContinuar.gameObject.SetActive(true);
-        botonContinuar.interactable = true;
+        MostrarBotonCalibrar(false);
+        MostrarBotonEmpezar(false);
+        MostrarBotonContinuar(true, true);
     }
 
     private void PrepararNivel2Dibujo()
@@ -472,5 +501,123 @@ public class PanelPrincipalManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    private void MostrarBotonCalibrar(bool visible)
+    {
+        if (botonCalibrar != null)
+        {
+            botonCalibrar.gameObject.SetActive(visible);
+        }
+
+        if (botonPokeCalibrar != null)
+        {
+            botonPokeCalibrar.SetActive(visible);
+        }
+    }
+
+    private void MostrarBotonEmpezar(bool visible)
+    {
+        botonPokeEmpezarVisible = visible;
+
+        if (botonEmpezar != null)
+        {
+            botonEmpezar.gameObject.SetActive(visible && botonPokeEmpezar == null);
+        }
+
+        if (botonPokeEmpezar != null)
+        {
+            botonPokeEmpezar.SetActive(visible);
+            if (visible)
+            {
+                ActualizarTextoBotonPoke("Empezar");
+            }
+        }
+    }
+
+    private void MostrarBotonContinuar(bool visible, bool interactable)
+    {
+        botonPokeContinuarVisible = visible;
+        botonPokeContinuarInteractuable = interactable;
+
+        GameObject botonPoke = ObtenerBotonPokeContinuar();
+        bool usarBotonPoke = botonPoke != null;
+
+        if (botonContinuar != null)
+        {
+            botonContinuar.gameObject.SetActive(visible && !usarBotonPoke);
+            botonContinuar.interactable = interactable;
+        }
+
+        if (botonPoke != null)
+        {
+            bool mostrarComoContinuar = visible && interactable;
+            bool usaElMismoBotonDeEmpezar = botonPokeContinuar == null && botonPoke == botonPokeEmpezar;
+
+            if (mostrarComoContinuar || !usaElMismoBotonDeEmpezar || !botonPokeEmpezarVisible)
+            {
+                botonPoke.SetActive(mostrarComoContinuar);
+            }
+
+            if (mostrarComoContinuar)
+            {
+                ActualizarTextoBotonPoke("Continuar");
+            }
+        }
+    }
+
+    private GameObject ObtenerBotonPokeContinuar()
+    {
+        return botonPokeContinuar != null ? botonPokeContinuar : botonPokeEmpezar;
+    }
+
+    private void ActualizarTextoBotonPoke(string texto)
+    {
+        TMP_Text textoPoke = ObtenerTextoBotonPoke();
+
+        if (textoPoke != null)
+        {
+            textoPoke.text = texto;
+        }
+    }
+
+    private TMP_Text ObtenerTextoBotonPoke()
+    {
+        if (textoBotonPokePrincipal != null)
+        {
+            return textoBotonPokePrincipal;
+        }
+
+        GameObject botonPoke = botonPokeEmpezar != null ? botonPokeEmpezar : botonPokeContinuar;
+
+        if (botonPoke == null)
+        {
+            return null;
+        }
+
+        Transform textoExistente = botonPoke.transform.Find("TextoPokePrincipal");
+
+        if (textoExistente != null)
+        {
+            textoBotonPokePrincipal = textoExistente.GetComponent<TMP_Text>();
+            return textoBotonPokePrincipal;
+        }
+
+        GameObject textoObject = new GameObject("TextoPokePrincipal");
+        textoObject.transform.SetParent(botonPoke.transform, false);
+        textoObject.transform.localPosition = posicionTextoBotonPoke;
+        textoObject.transform.localRotation = Quaternion.identity;
+        textoObject.transform.localScale = Vector3.one;
+
+        TextMeshPro texto3D = textoObject.AddComponent<TextMeshPro>();
+        texto3D.alignment = TextAlignmentOptions.Center;
+        texto3D.color = colorTextoBotonPoke;
+        texto3D.fontSize = tamanoTextoBotonPoke;
+        texto3D.enableWordWrapping = false;
+        texto3D.raycastTarget = false;
+        texto3D.rectTransform.sizeDelta = new Vector2(anchoTextoBotonPoke, altoTextoBotonPoke);
+
+        textoBotonPokePrincipal = texto3D;
+        return textoBotonPokePrincipal;
     }
 }
