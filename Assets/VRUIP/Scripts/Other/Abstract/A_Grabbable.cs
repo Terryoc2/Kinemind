@@ -8,7 +8,6 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 #elif META_SDK
 using Oculus.Interaction;
 using Oculus.Interaction.HandGrab;
-using Oculus.Interaction.HandGrab.Editor;
 #endif
 
 namespace VRUIP
@@ -147,8 +146,6 @@ namespace VRUIP
             grabInteractable.InjectOptionalPointableElement(grabbable);
             handGrabInteractable.InjectRigidbody(rigidBody);
             handGrabInteractable.InjectOptionalPointableElement(grabbable);
-            HandGrabInteractable.Registry.Register(handGrabInteractable);
-            GrabInteractable.Registry.Register(grabInteractable);
 #endif
             RegisterOnRelease(() => transform.parent = _parent);
         }

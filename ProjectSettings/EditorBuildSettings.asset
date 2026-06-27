@@ -5,17 +5,8 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/oficiaal.unity
-    guid: 206ce0f49a72a8045b90526c1df4eb83
-  - enabled: 0
-    path: Assets/Scenes/oficiaal 1.unity
-    guid: 58ab11e5fecd8b34a83b46d4c27a4044
-  - enabled: 0
-    path: Assets/Scenes/pruebaAJHOR.unity
-    guid: ef4dfcc1721c82749b409f4cd2951af1
   - enabled: 1
-    path: Assets/Scenes/OFICIAL2.unity
+    path: Assets/Scenes/OFICIAL.unity
     guid: b881c6148ecd6494eb7dd7440a2ec613
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 015775e753d236f40b7016c6bd483e39,

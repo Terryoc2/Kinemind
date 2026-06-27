@@ -21,11 +21,19 @@ public class PanelPrincipalManager : MonoBehaviour
 
     [Header("Texto Boton Poke")]
     public TMP_Text textoBotonPokePrincipal;
+    public string textoPokeCalibrar = "Calibrar";
+    public string textoPokeEmpezar = "Empezar";
+    public string textoPokeContinuar = "Continuar";
     public Vector3 posicionTextoBotonPoke = new Vector3(0f, 0f, -0.38f);
     public float anchoTextoBotonPoke = 1.2f;
     public float altoTextoBotonPoke = 0.35f;
     public float tamanoTextoBotonPoke = 0.28f;
     public Color colorTextoBotonPoke = Color.black;
+
+    [Header("Posiciones Boton Poke")]
+    public bool moverPokePrincipalAlContinuar = true;
+    public Vector3 posicionLocalPokeEmpezar = new Vector3(318f, -249f, 0f);
+    public Vector3 posicionLocalPokeContinuar = new Vector3(0f, -229f, 0f);
 
     [Header("Panel VR")]
     public Transform panelInteractuableRoot;
@@ -35,6 +43,8 @@ public class PanelPrincipalManager : MonoBehaviour
 
     [Header("Nivel 1")]
     public MemoryLevel1Manager nivel1Manager;
+    public int totalSecuenciasNivel1 = 3;
+    public string textoSiguienteSecuenciaNivel1 = "Pulsa continuar para ver la siguiente secuencia.";
 
     [Header("Transicion Nivel 2")]
     public GameObject escenarioNivel2;
@@ -56,13 +66,16 @@ public class PanelPrincipalManager : MonoBehaviour
 
     private Coroutine rutinaContinuar;
     private Coroutine rutinaTransicionNivel2;
+    private TMP_Text textoBotonPokeCalibrar;
     private bool actividadIniciada = false;
     private bool actividadCompletada = false;
     private bool transicionandoNivel = false;
     private bool botonPokeEmpezarVisible = false;
     private bool botonPokeContinuarVisible = false;
     private bool botonPokeContinuarInteractuable = false;
+    private bool accionPokeEnProceso = false;
     private int nivelActual = 1;
+    private int secuenciaNivel1Actual = 1;
 
     private void Start()
     {
@@ -85,6 +98,7 @@ public class PanelPrincipalManager : MonoBehaviour
     public void MostrarInicio()
     {
         nivelActual = 1;
+        secuenciaNivel1Actual = 1;
         textoTitulo.text = "JKInemind";
         textoIndicacion.text = "Bienvenido";
 
@@ -114,39 +128,23 @@ public class PanelPrincipalManager : MonoBehaviour
 
         actividadIniciada = false;
         actividadCompletada = false;
-
-        textoTitulo.text = "Nivel 1";
-
-        if (nivel1Manager != null)
-        {
-            nivel1Manager.PrepararPatron();
-            textoIndicacion.text = nivel1Manager.ObtenerTextoPatron();
-        }
-        else
-        {
-            textoIndicacion.text = "Memoriza el patron y coloca cada figura en su caja.";
-        }
-
-        MostrarBotonCalibrar(false);
-        MostrarBotonEmpezar(false);
-
-        MostrarBotonContinuar(false, false);
-
-        if (rutinaContinuar != null)
-        {
-            StopCoroutine(rutinaContinuar);
-        }
-
-        rutinaContinuar = StartCoroutine(MostrarContinuarDespuesDeTiempo());
+        secuenciaNivel1Actual = 1;
+        PrepararSecuenciaNivel1();
     }
 
     public void AccionarBotonPokePrincipal()
     {
+        if (accionPokeEnProceso)
+        {
+            return;
+        }
+
         bool puedeContinuar = botonPokeContinuarVisible
             && botonPokeContinuarInteractuable;
 
         if (puedeContinuar)
         {
+            BloquearAccionPokeTemporalmente();
             Continuar();
             return;
         }
@@ -157,8 +155,14 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (puedeEmpezar)
         {
+            BloquearAccionPokeTemporalmente();
             Empezar();
         }
+    }
+
+    public void Calibrar()
+    {
+        Debug.Log("CALIBRAR EJECUTADO");
     }
 
     private IEnumerator MostrarContinuarDespuesDeTiempo()
@@ -184,8 +188,17 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (actividadCompletada)
         {
-            IniciarTransicionNivel2();
-            MostrarBotonContinuar(true, false);
+            if (secuenciaNivel1Actual < ObtenerTotalSecuenciasNivel1())
+            {
+                secuenciaNivel1Actual++;
+                PrepararSecuenciaNivel1();
+            }
+            else
+            {
+                IniciarTransicionNivel2();
+                MostrarBotonContinuar(true, false);
+            }
+
             return;
         }
 
@@ -196,7 +209,7 @@ public class PanelPrincipalManager : MonoBehaviour
 
         actividadIniciada = true;
 
-        textoTitulo.text = "Nivel 1";
+        textoTitulo.text = ObtenerTituloSecuenciaNivel1();
         textoIndicacion.text = "Ordena y pon en las cajas";
 
         MostrarBotonContinuar(true, false);
@@ -210,12 +223,59 @@ public class PanelPrincipalManager : MonoBehaviour
     public void CompletarActividad()
     {
         actividadCompletada = true;
-        textoTitulo.text = "Nivel 1";
-        textoIndicacion.text = "Actividad completada.";
+        actividadIniciada = false;
 
+        if (secuenciaNivel1Actual < ObtenerTotalSecuenciasNivel1())
+        {
+            textoTitulo.text = "Secuencia " + secuenciaNivel1Actual + " completada";
+            textoIndicacion.text = textoSiguienteSecuenciaNivel1;
+            MostrarBotonContinuar(true, true);
+            return;
+        }
+
+        textoTitulo.text = "Nivel 1 completado";
+        textoIndicacion.text = "Actividad completada.";
+        MostrarBotonContinuar(false, false);
+        IniciarTransicionNivel2();
+    }
+
+    private void PrepararSecuenciaNivel1()
+    {
+        actividadIniciada = false;
+        actividadCompletada = false;
+
+        textoTitulo.text = ObtenerTituloSecuenciaNivel1();
+
+        if (nivel1Manager != null)
+        {
+            nivel1Manager.PrepararPatron();
+            textoIndicacion.text = nivel1Manager.ObtenerTextoPatron();
+        }
+        else
+        {
+            textoIndicacion.text = "Memoriza el patron y coloca cada figura en su caja.";
+        }
+
+        MostrarBotonCalibrar(false);
+        MostrarBotonEmpezar(false);
         MostrarBotonContinuar(false, false);
 
-        IniciarTransicionNivel2();
+        if (rutinaContinuar != null)
+        {
+            StopCoroutine(rutinaContinuar);
+        }
+
+        rutinaContinuar = StartCoroutine(MostrarContinuarDespuesDeTiempo());
+    }
+
+    private int ObtenerTotalSecuenciasNivel1()
+    {
+        return Mathf.Max(1, totalSecuenciasNivel1);
+    }
+
+    private string ObtenerTituloSecuenciaNivel1()
+    {
+        return "Nivel 1 - Secuencia " + secuenciaNivel1Actual + "/" + ObtenerTotalSecuenciasNivel1();
     }
 
     private void IniciarTransicionNivel2()
@@ -265,6 +325,8 @@ public class PanelPrincipalManager : MonoBehaviour
         }
 
         TeletransportarAlNivel2();
+        yield return null;
+        ColocarPanelNivel2();
         MostrarInicioNivel2();
         transicionandoNivel = false;
         rutinaTransicionNivel2 = null;
@@ -302,19 +364,12 @@ public class PanelPrincipalManager : MonoBehaviour
             Debug.LogWarning("Falta asignar Jugador VR o Punto Jugador Nivel 2 para el teletransporte.");
         }
 
-        if (puntoPanelNivel2 != null)
-        {
-            MoverPanelInteractuable(puntoPanelNivel2.position, puntoPanelNivel2.rotation);
-        }
-        else if (colocarPanelFrenteAlJugador)
-        {
-            ColocarPanelFrenteAlJugador();
-        }
+        ColocarPanelNivel2();
     }
 
     private Transform BuscarJugadorVR()
     {
-        Camera mainCamera = Camera.main;
+        Camera mainCamera = ObtenerCamaraVR();
 
         if (mainCamera != null)
         {
@@ -323,6 +378,28 @@ public class PanelPrincipalManager : MonoBehaviour
 
         Camera cameraInScene = FindObjectOfType<Camera>();
         return cameraInScene != null ? cameraInScene.transform.root : null;
+    }
+
+    private Camera ObtenerCamaraVR()
+    {
+        Camera mainCamera = Camera.main;
+
+        if (mainCamera != null)
+        {
+            return mainCamera;
+        }
+
+        Camera[] cameras = FindObjectsOfType<Camera>(true);
+
+        foreach (Camera camera in cameras)
+        {
+            if (camera != null && camera.isActiveAndEnabled)
+            {
+                return camera;
+            }
+        }
+
+        return cameras.Length > 0 ? cameras[0] : null;
     }
 
     private void MoverJugador(Transform jugador, Transform destino)
@@ -344,10 +421,11 @@ public class PanelPrincipalManager : MonoBehaviour
 
     private void ColocarPanelFrenteAlJugador()
     {
-        Camera mainCamera = Camera.main;
+        Camera mainCamera = ObtenerCamaraVR();
 
         if (mainCamera == null)
         {
+            Debug.LogWarning("No se encontro una camara VR para colocar el panel del Nivel 2 frente al jugador.");
             return;
         }
 
@@ -368,9 +446,32 @@ public class PanelPrincipalManager : MonoBehaviour
         MoverPanelInteractuable(panelPosition, panelRotation);
     }
 
+    private void ColocarPanelNivel2()
+    {
+        if (puntoPanelNivel2 != null)
+        {
+            MoverPanelInteractuable(puntoPanelNivel2.position, puntoPanelNivel2.rotation);
+        }
+        else if (colocarPanelFrenteAlJugador)
+        {
+            ColocarPanelFrenteAlJugador();
+        }
+    }
+
     private void MoverPanelInteractuable(Vector3 position, Quaternion rotation)
     {
         Transform panelRoot = ObtenerPanelInteractuableRoot();
+
+        if (!panelRoot.gameObject.activeSelf)
+        {
+            panelRoot.gameObject.SetActive(true);
+        }
+
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
         panelRoot.SetPositionAndRotation(position, rotation);
     }
 
@@ -394,6 +495,9 @@ public class PanelPrincipalManager : MonoBehaviour
 
     private void MostrarInicioNivel2()
     {
+        gameObject.SetActive(true);
+        ObtenerPanelInteractuableRoot().gameObject.SetActive(true);
+
         nivelActual = 2;
         actividadIniciada = false;
         actividadCompletada = false;
@@ -507,13 +611,19 @@ public class PanelPrincipalManager : MonoBehaviour
     {
         if (botonCalibrar != null)
         {
-            botonCalibrar.gameObject.SetActive(visible);
+            botonCalibrar.gameObject.SetActive(visible && botonPokeCalibrar == null);
         }
 
         if (botonPokeCalibrar != null)
         {
-            botonPokeCalibrar.SetActive(visible);
+            CambiarVisibilidadBotonPoke(botonPokeCalibrar, visible);
+
+            if (visible)
+            {
+                ActualizarTextoBotonPoke(botonPokeCalibrar, ref textoBotonPokeCalibrar, "TextoPokeCalibrar", textoPokeCalibrar);
+            }
         }
+
     }
 
     private void MostrarBotonEmpezar(bool visible)
@@ -527,12 +637,18 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (botonPokeEmpezar != null)
         {
-            botonPokeEmpezar.SetActive(visible);
             if (visible)
             {
-                ActualizarTextoBotonPoke("Empezar");
+                MoverBotonPokePrincipal(botonPokeEmpezar, posicionLocalPokeEmpezar);
+            }
+
+            CambiarVisibilidadBotonPoke(botonPokeEmpezar, visible);
+            if (visible)
+            {
+                ActualizarTextoBotonPoke(textoPokeEmpezar);
             }
         }
+
     }
 
     private void MostrarBotonContinuar(bool visible, bool interactable)
@@ -556,14 +672,20 @@ public class PanelPrincipalManager : MonoBehaviour
 
             if (mostrarComoContinuar || !usaElMismoBotonDeEmpezar || !botonPokeEmpezarVisible)
             {
-                botonPoke.SetActive(mostrarComoContinuar);
+                if (mostrarComoContinuar && moverPokePrincipalAlContinuar)
+                {
+                    MoverBotonPokePrincipal(botonPoke, posicionLocalPokeContinuar);
+                }
+
+                CambiarVisibilidadBotonPoke(botonPoke, mostrarComoContinuar);
             }
 
             if (mostrarComoContinuar)
             {
-                ActualizarTextoBotonPoke("Continuar");
+                ActualizarTextoBotonPoke(textoPokeContinuar);
             }
         }
+
     }
 
     private GameObject ObtenerBotonPokeContinuar()
@@ -574,6 +696,16 @@ public class PanelPrincipalManager : MonoBehaviour
     private void ActualizarTextoBotonPoke(string texto)
     {
         TMP_Text textoPoke = ObtenerTextoBotonPoke();
+
+        if (textoPoke != null)
+        {
+            textoPoke.text = texto;
+        }
+    }
+
+    private void ActualizarTextoBotonPoke(GameObject botonPoke, ref TMP_Text textoReferencia, string nombreTexto, string texto)
+    {
+        TMP_Text textoPoke = ObtenerTextoBotonPoke(botonPoke, ref textoReferencia, nombreTexto);
 
         if (textoPoke != null)
         {
@@ -620,4 +752,110 @@ public class PanelPrincipalManager : MonoBehaviour
         textoBotonPokePrincipal = texto3D;
         return textoBotonPokePrincipal;
     }
+
+    private TMP_Text ObtenerTextoBotonPoke(GameObject botonPoke, ref TMP_Text textoReferencia, string nombreTexto)
+    {
+        if (textoReferencia != null)
+        {
+            return textoReferencia;
+        }
+
+        if (botonPoke == null)
+        {
+            return null;
+        }
+
+        Transform textoExistente = botonPoke.transform.Find(nombreTexto);
+
+        if (textoExistente != null)
+        {
+            textoReferencia = textoExistente.GetComponent<TMP_Text>();
+            return textoReferencia;
+        }
+
+        GameObject textoObject = new GameObject(nombreTexto);
+        textoObject.transform.SetParent(botonPoke.transform, false);
+        textoObject.transform.localPosition = posicionTextoBotonPoke;
+        textoObject.transform.localRotation = Quaternion.identity;
+        textoObject.transform.localScale = Vector3.one;
+
+        TextMeshPro texto3D = textoObject.AddComponent<TextMeshPro>();
+        texto3D.alignment = TextAlignmentOptions.Center;
+        texto3D.color = colorTextoBotonPoke;
+        texto3D.fontSize = tamanoTextoBotonPoke;
+        texto3D.enableWordWrapping = false;
+        texto3D.raycastTarget = false;
+        texto3D.rectTransform.sizeDelta = new Vector2(anchoTextoBotonPoke, altoTextoBotonPoke);
+
+        textoReferencia = texto3D;
+        return textoReferencia;
+    }
+
+    private void BloquearAccionPokeTemporalmente()
+    {
+        if (!Application.isPlaying || !isActiveAndEnabled)
+        {
+            return;
+        }
+
+        accionPokeEnProceso = true;
+        StartCoroutine(DesbloquearAccionPoke());
+    }
+
+    private IEnumerator DesbloquearAccionPoke()
+    {
+        yield return new WaitForSeconds(0.45f);
+        accionPokeEnProceso = false;
+    }
+
+    private void CambiarVisibilidadBotonPoke(GameObject botonPoke, bool visible)
+    {
+        if (botonPoke == null)
+        {
+            return;
+        }
+
+        if (!botonPoke.activeSelf)
+        {
+            if (!visible)
+            {
+                return;
+            }
+
+            botonPoke.SetActive(true);
+        }
+
+        Renderer[] renderers = botonPoke.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.enabled = visible;
+        }
+
+        Collider[] colliders = botonPoke.GetComponentsInChildren<Collider>(true);
+        foreach (Collider collider in colliders)
+        {
+            collider.enabled = visible;
+        }
+    }
+    private void MoverBotonPokePrincipal(GameObject botonPoke, Vector3 posicionLocal)
+    {
+        if (botonPoke == null)
+        {
+            return;
+        }
+
+        Transform raizPoke = ObtenerRaizMovimientoPoke(botonPoke.transform);
+        raizPoke.localPosition = posicionLocal;
+    }
+
+    private Transform ObtenerRaizMovimientoPoke(Transform botonPoke)
+    {
+        if (botonPoke.parent != null && botonPoke.parent.name.StartsWith("Poke Interaction"))
+        {
+            return botonPoke.parent;
+        }
+
+        return botonPoke;
+    }
+
 }
