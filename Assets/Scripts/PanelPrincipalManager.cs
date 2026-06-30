@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class PanelPrincipalManager : MonoBehaviour
@@ -67,6 +69,7 @@ public class PanelPrincipalManager : MonoBehaviour
     private Coroutine rutinaContinuar;
     private Coroutine rutinaTransicionNivel2;
     private TMP_Text textoBotonPokeCalibrar;
+    private string textoMemorizacionActual = "";
     private bool actividadIniciada = false;
     private bool actividadCompletada = false;
     private bool transicionandoNivel = false;
@@ -76,6 +79,11 @@ public class PanelPrincipalManager : MonoBehaviour
     private bool accionPokeEnProceso = false;
     private int nivelActual = 1;
     private int secuenciaNivel1Actual = 1;
+
+    private void OnEnable()
+    {
+        accionPokeEnProceso = false;
+    }
 
     private void Start()
     {
@@ -164,12 +172,28 @@ public class PanelPrincipalManager : MonoBehaviour
     {
         Debug.Log("CALIBRAR EJECUTADO");
     }
-
     private IEnumerator MostrarContinuarDespuesDeTiempo()
     {
-        yield return new WaitForSeconds(segundosParaContinuar);
+        if (!EsEscenaAgarrar())
+        {
+            yield return new WaitForSeconds(segundosParaContinuar);
+            MostrarBotonContinuar(true, true);
+            rutinaContinuar = null;
+            yield break;
+        }
 
+        int segundosRestantes = Mathf.Max(0, Mathf.CeilToInt(segundosParaContinuar));
+
+        while (segundosRestantes > 0)
+        {
+            ActualizarTextoMemorizacion(segundosRestantes);
+            yield return new WaitForSeconds(1f);
+            segundosRestantes--;
+        }
+
+        ActualizarTextoMemorizacion(0);
         MostrarBotonContinuar(true, true);
+        rutinaContinuar = null;
     }
 
     public void Continuar()
@@ -178,9 +202,18 @@ public class PanelPrincipalManager : MonoBehaviour
         {
             if (actividadCompletada)
             {
-                textoTitulo.text = "Nivel 2 completado";
-                textoIndicacion.text = "Actividad completada.";
-                MostrarBotonContinuar(true, false);
+                if (EsEscenaAgarrar())
+                {
+                    textoTitulo.text = "Juego completado";
+                    textoIndicacion.text = "Nivel 2 terminado.";
+                    MostrarBotonContinuar(false, false);
+                }
+                else
+                {
+                    textoTitulo.text = "Nivel 2 completado";
+                    textoIndicacion.text = "Actividad completada.";
+                    MostrarBotonContinuar(true, false);
+                }
             }
 
             return;
@@ -245,15 +278,23 @@ public class PanelPrincipalManager : MonoBehaviour
         actividadCompletada = false;
 
         textoTitulo.text = ObtenerTituloSecuenciaNivel1();
-
         if (nivel1Manager != null)
         {
             nivel1Manager.PrepararPatron();
-            textoIndicacion.text = nivel1Manager.ObtenerTextoPatron();
+            textoMemorizacionActual = nivel1Manager.ObtenerTextoPatron();
         }
         else
         {
-            textoIndicacion.text = "Memoriza el patron y coloca cada figura en su caja.";
+            textoMemorizacionActual = "Memoriza el patron y coloca cada figura en su caja.";
+        }
+
+        if (EsEscenaAgarrar())
+        {
+            ActualizarTextoMemorizacion(Mathf.Max(0, Mathf.CeilToInt(segundosParaContinuar)));
+        }
+        else
+        {
+            textoIndicacion.text = textoMemorizacionActual;
         }
 
         MostrarBotonCalibrar(false);
@@ -267,7 +308,30 @@ public class PanelPrincipalManager : MonoBehaviour
 
         rutinaContinuar = StartCoroutine(MostrarContinuarDespuesDeTiempo());
     }
+    private bool EsEscenaAgarrar()
+    {
+        return string.Equals(SceneManager.GetActiveScene().name, "AGARRAR", StringComparison.OrdinalIgnoreCase);
+    }
+    private void ActualizarTextoMemorizacion(int segundosRestantes)
+    {
+        if (textoIndicacion == null)
+        {
+            return;
+        }
 
+        string textoBase = string.IsNullOrWhiteSpace(textoMemorizacionActual)
+            ? "Memoriza el patron y coloca cada figura en su caja."
+            : textoMemorizacionActual;
+
+        if (segundosRestantes > 0)
+        {
+            textoIndicacion.text = textoBase + "\n\nContinuar en: " + segundosRestantes;
+        }
+        else
+        {
+            textoIndicacion.text = textoBase + "\n\nYa puedes continuar.";
+        }
+    }
     private int ObtenerTotalSecuenciasNivel1()
     {
         return Mathf.Max(1, totalSecuenciasNivel1);
@@ -538,6 +602,7 @@ public class PanelPrincipalManager : MonoBehaviour
         if (nivel2DibujoManager != null)
         {
             nivel2DibujoManager.IniciarActividad();
+            accionPokeEnProceso = false;
             gameObject.SetActive(false);
         }
         else
@@ -549,7 +614,9 @@ public class PanelPrincipalManager : MonoBehaviour
 
     public void CompletarNivel2()
     {
+        ObtenerPanelInteractuableRoot().gameObject.SetActive(true);
         gameObject.SetActive(true);
+        accionPokeEnProceso = false;
 
         nivelActual = 2;
         actividadIniciada = false;
