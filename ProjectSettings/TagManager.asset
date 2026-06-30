@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Cajon2
   - ControlCajon
+  - prueba
   layers:
   - Default
   - TransparentFX
