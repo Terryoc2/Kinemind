@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -42,6 +42,12 @@ public class PanelPrincipalManager : MonoBehaviour
 
     [Header("Tiempo")]
     public float segundosParaContinuar = 15f;
+
+    [Header("IMU BLUOFICIAL")]
+    public bool habilitarImuEnBluOficial = true;
+    public string escenaImuBluOficial = "BLUOFICIAL";
+    public float segundosCalibracionImu = 5f;
+    public ImuPokeMotorController imuPokeMotorController;
 
     [Header("Nivel 1")]
     public MemoryLevel1Manager nivel1Manager;
@@ -99,6 +105,7 @@ public class PanelPrincipalManager : MonoBehaviour
         }
 
         PrepararNivel2Dibujo();
+        PrepararImuBluOficial();
 
         MostrarInicio();
     }
@@ -171,6 +178,59 @@ public class PanelPrincipalManager : MonoBehaviour
     public void Calibrar()
     {
         Debug.Log("CALIBRAR EJECUTADO");
+
+        if (!DebeUsarImuEnEstaEscena())
+        {
+            return;
+        }
+
+        ImuPokeMotorController controller = ObtenerImuPokeMotorController();
+
+        if (controller == null)
+        {
+            Debug.LogWarning("No se pudo crear/encontrar ImuPokeMotorController.");
+            return;
+        }
+
+        controller.calibrationSeconds = segundosCalibracionImu;
+        controller.ConnectAndCalibrate(segundosCalibracionImu);
+    }
+
+    private void PrepararImuBluOficial()
+    {
+        if (!DebeUsarImuEnEstaEscena())
+        {
+            return;
+        }
+
+        ObtenerImuPokeMotorController();
+    }
+
+    private bool DebeUsarImuEnEstaEscena()
+    {
+        return habilitarImuEnBluOficial
+            && string.Equals(SceneManager.GetActiveScene().name, escenaImuBluOficial, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private ImuPokeMotorController ObtenerImuPokeMotorController()
+    {
+        if (imuPokeMotorController == null)
+        {
+            imuPokeMotorController = FindObjectOfType<ImuPokeMotorController>(true);
+        }
+
+        if (imuPokeMotorController == null)
+        {
+            GameObject imuObject = new GameObject("IMU_PokeMotorController_BLUOFICIAL");
+            imuPokeMotorController = imuObject.AddComponent<ImuPokeMotorController>();
+        }
+
+        if (imuPokeMotorController.statusText == null)
+        {
+            imuPokeMotorController.statusText = textoIndicacion;
+        }
+
+        return imuPokeMotorController;
     }
     private IEnumerator MostrarContinuarDespuesDeTiempo()
     {
@@ -926,3 +986,6 @@ public class PanelPrincipalManager : MonoBehaviour
     }
 
 }
+
+
+

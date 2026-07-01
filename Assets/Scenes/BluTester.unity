@@ -583,6 +583,7 @@ GameObject:
   - component: {fileID: 57641571}
   - component: {fileID: 57641570}
   - component: {fileID: 57641569}
+  - component: {fileID: 57641572}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -607,7 +608,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 32}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &57641569
@@ -654,9 +655,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 775040895}
-        m_TargetAssemblyTypeName: IMUBluetoothUI, Assembly-CSharp
-        m_MethodName: ConectarESP32
+      - m_Target: {fileID: 775040897}
+        m_TargetAssemblyTypeName: ImuBluetoothGateway, Assembly-CSharp
+        m_MethodName: ConnectImuBluetooth
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -704,6 +705,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 57641567}
   m_CullTransparentMesh: 1
+--- !u!114 &57641572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 57641567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8e1b7f060e05c441a72e6fdad9352a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  textoEstado: {fileID: 230666017}
 --- !u!1 &61721649
 GameObject:
   m_ObjectHideFlags: 0
@@ -1040,7 +1054,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &71331994
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1057,7 +1071,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -47.1}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &71331995
@@ -3144,7 +3158,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 242.9, y: -47.1}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &230666017
@@ -8455,6 +8469,7 @@ GameObject:
   - component: {fileID: 775040893}
   - component: {fileID: 775040895}
   - component: {fileID: 775040896}
+  - component: {fileID: 775040897}
   m_Layer: 0
   m_Name: BLuteohmanager
   m_TagString: Untagged
@@ -8513,7 +8528,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 775040892}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2bceabc3837bddb4ca431d9923257d30, type: 3}
   m_Name: 
@@ -8522,6 +8537,23 @@ MonoBehaviour:
   txtEstado: {fileID: 230666017}
   txtAcelerometro: {fileID: 1741991673}
   acelerometroActual: {x: 0, y: 0, z: 0}
+--- !u!114 &775040897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 775040892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5128d3aa74ac0ff4d9eb0cba33207340, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bluetoothDeviceName: ESP32_IMU_LINK
+  sensorTargetTag: SensorTarget
+  connectionLabel: {fileID: 230666017}
+  accelerationLabel: {fileID: 1741991673}
+  accelerometerData: {x: 0, y: 0, z: 0}
 --- !u!1 &775129700
 GameObject:
   m_ObjectHideFlags: 0
@@ -16563,6 +16595,7 @@ GameObject:
   - component: {fileID: 1584001738}
   - component: {fileID: 1584001737}
   - component: {fileID: 1584001736}
+  - component: {fileID: 1584001741}
   m_Layer: 0
   m_Name: Sphere
   m_TagString: prueba
@@ -16671,6 +16704,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1584001741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1584001735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f4581905216f1e4bb9e4e1644beb16c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  axisX: 0
+  axisY: 0
+  axisZ: 0
+  receivedAcceleration: {x: 0, y: 0, z: 0}
 --- !u!1 &1584588481
 GameObject:
   m_ObjectHideFlags: 0
@@ -18679,7 +18728,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -204.5, y: -53.7}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1741991673
@@ -22488,7 +22537,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2071960316}
   - component: {fileID: 2071960315}
-  - component: {fileID: 2071960314}
+  - component: {fileID: 2071960317}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -22496,26 +22545,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2071960314
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2071960313}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SendPointerHoverToParent: 1
-  m_HorizontalAxis: Horizontal
-  m_VerticalAxis: Vertical
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
 --- !u!114 &2071960315
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22546,6 +22575,48 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2071960317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2071960313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!1 &2097017658
 GameObject:
   m_ObjectHideFlags: 0

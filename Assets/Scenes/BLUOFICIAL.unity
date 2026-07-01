@@ -32207,6 +32207,10 @@ MonoBehaviour:
   posicionLocalPokeContinuar: {x: 0, y: -229, z: 0}
   panelInteractuableRoot: {fileID: 0}
   segundosParaContinuar: 10
+  habilitarImuEnBluOficial: 1
+  escenaImuBluOficial: BLUOFICIAL
+  segundosCalibracionImu: 10
+  imuPokeMotorController: {fileID: 2132436368}
   nivel1Manager: {fileID: 6232869}
   totalSecuenciasNivel1: 3
   textoSiguienteSecuenciaNivel1: Pulsa continuar para ver la siguiente secuencia.
@@ -72117,6 +72121,103 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 1
+--- !u!1 &2132436367
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2132436369}
+  - component: {fileID: 2132436368}
+  m_Layer: 0
+  m_Name: IMU_PokeMotorController_BLUOFICIAL
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2132436368
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132436367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fa6c2f2563d8c14fadf75be854b9e69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bluetoothDeviceName: ESP32_IMU_LINK
+  fallbackBluetoothDeviceName: 
+  calibrationSeconds: 10
+  autoConnectOnCalibrate: 1
+  isCalibrating: 0
+  isCalibrated: 0
+  calibrationSecondsRemaining: 0
+  calibrationOffset: {x: 0, y: 0, z: 0}
+  calibrationSampleCount: 0
+  enableMotorFeedback: 1
+  requireCalibrationForMotor: 1
+  allowedMovementRange: {x: 8000, y: 8000, z: 8000}
+  vibrationCommand: 8
+  vibrationCooldownSeconds: 2
+  isOutsideMovementRange: 0
+  exceededAxes: 
+  sensorTargetTag: SensorTarget
+  fallbackSensorTargetTag: prueba
+  statusText: {fileID: 0}
+  dataText: {fileID: 0}
+  showEditorOverlay: 1
+  connectButtonRect:
+    serializedVersion: 2
+    x: 20
+    y: 20
+    width: 170
+    height: 48
+  calibrateButtonRect:
+    serializedVersion: 2
+    x: 200
+    y: 20
+    width: 150
+    height: 48
+  testVibrationButtonRect:
+    serializedVersion: 2
+    x: 360
+    y: 20
+    width: 150
+    height: 48
+  resetButtonRect:
+    serializedVersion: 2
+    x: 520
+    y: 20
+    width: 150
+    height: 48
+  logRect:
+    serializedVersion: 2
+    x: 20
+    y: 78
+    width: 720
+    height: 290
+  rawAcceleration: {x: 0, y: 0, z: 0}
+  calibratedAcceleration: {x: 0, y: 0, z: 0}
+--- !u!4 &2132436369
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132436367}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.283, y: 2.133, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2132575665
 GameObject:
   m_ObjectHideFlags: 0
@@ -101271,3 +101372,4 @@ SceneRoots:
   - {fileID: 1027367468}
   - {fileID: 105404150}
   - {fileID: 910731230}
+  - {fileID: 2132436369}
