@@ -60,8 +60,8 @@ public class PanelPrincipalManager : MonoBehaviour
     public Transform puntoJugadorNivel2;
     public Transform puntoPanelNivel2;
     public bool colocarPanelFrenteAlJugador = true;
-    public float distanciaPanelNivel2 = 2f;
-    public float alturaPanelNivel2 = 0f;
+    public float distanciaPanelNivel2 = 1.8f;
+    public float alturaPanelNivel2 = -0.35f;
     public float segundosEntreCuenta = 1f;
     public string tituloNivel2 = "Nivel 2";
     public string textoBienvenidaNivel2 = "Bienvenido";
@@ -83,6 +83,7 @@ public class PanelPrincipalManager : MonoBehaviour
     private bool botonPokeContinuarVisible = false;
     private bool botonPokeContinuarInteractuable = false;
     private bool accionPokeEnProceso = false;
+    private bool panelNivel2Colocado = false;
     private int nivelActual = 1;
     private int secuenciaNivel1Actual = 1;
 
@@ -114,6 +115,7 @@ public class PanelPrincipalManager : MonoBehaviour
     {
         nivelActual = 1;
         secuenciaNivel1Actual = 1;
+        panelNivel2Colocado = false;
         textoTitulo.text = "JKInemind";
         textoIndicacion.text = "Bienvenido";
 
@@ -208,8 +210,19 @@ public class PanelPrincipalManager : MonoBehaviour
 
     private bool DebeUsarImuEnEstaEscena()
     {
-        return habilitarImuEnBluOficial
-            && string.Equals(SceneManager.GetActiveScene().name, escenaImuBluOficial, StringComparison.OrdinalIgnoreCase);
+        if (!habilitarImuEnBluOficial)
+        {
+            return false;
+        }
+
+        if (botonPokeCalibrar != null
+            || imuPokeMotorController != null
+            || FindObjectOfType<ImuPokeMotorController>(true) != null)
+        {
+            return true;
+        }
+
+        return string.Equals(SceneManager.GetActiveScene().name, escenaImuBluOficial, StringComparison.OrdinalIgnoreCase);
     }
 
     private ImuPokeMotorController ObtenerImuPokeMotorController()
@@ -448,6 +461,7 @@ public class PanelPrincipalManager : MonoBehaviour
             yield return new WaitForSeconds(segundosEntreCuenta);
         }
 
+        panelNivel2Colocado = false;
         TeletransportarAlNivel2();
         yield return null;
         ColocarPanelNivel2();
@@ -488,7 +502,6 @@ public class PanelPrincipalManager : MonoBehaviour
             Debug.LogWarning("Falta asignar Jugador VR o Punto Jugador Nivel 2 para el teletransporte.");
         }
 
-        ColocarPanelNivel2();
     }
 
     private Transform BuscarJugadorVR()
@@ -543,14 +556,14 @@ public class PanelPrincipalManager : MonoBehaviour
         }
     }
 
-    private void ColocarPanelFrenteAlJugador()
+    private bool ColocarPanelFrenteAlJugador()
     {
         Camera mainCamera = ObtenerCamaraVR();
 
         if (mainCamera == null)
         {
             Debug.LogWarning("No se encontro una camara VR para colocar el panel del Nivel 2 frente al jugador.");
-            return;
+            return false;
         }
 
         Vector3 forward = mainCamera.transform.forward;
@@ -559,26 +572,42 @@ public class PanelPrincipalManager : MonoBehaviour
         if (forward.sqrMagnitude < 0.001f)
         {
             forward = mainCamera.transform.forward;
+            forward.y = 0f;
+        }
+
+        if (forward.sqrMagnitude < 0.001f)
+        {
+            return false;
         }
 
         forward.Normalize();
 
-        Vector3 panelPosition = mainCamera.transform.position + forward * distanciaPanelNivel2;
-        panelPosition.y = mainCamera.transform.position.y + alturaPanelNivel2;
+        float distanciaComoda = Mathf.Approximately(distanciaPanelNivel2, 2f) ? 1.8f : distanciaPanelNivel2;
+        float alturaComoda = Mathf.Approximately(alturaPanelNivel2, 0f) ? -0.35f : alturaPanelNivel2;
 
-        Quaternion panelRotation = Quaternion.LookRotation(mainCamera.transform.position - panelPosition, Vector3.up);
+        Vector3 panelPosition = mainCamera.transform.position + forward * Mathf.Max(1.2f, distanciaComoda);
+        panelPosition.y = mainCamera.transform.position.y + alturaComoda;
+
+        Quaternion panelRotation = Quaternion.LookRotation(-forward, Vector3.up);
         MoverPanelInteractuable(panelPosition, panelRotation);
+        return true;
     }
 
     private void ColocarPanelNivel2()
     {
+        if (panelNivel2Colocado)
+        {
+            return;
+        }
+
         if (puntoPanelNivel2 != null)
         {
             MoverPanelInteractuable(puntoPanelNivel2.position, puntoPanelNivel2.rotation);
+            panelNivel2Colocado = true;
         }
         else if (colocarPanelFrenteAlJugador)
         {
-            ColocarPanelFrenteAlJugador();
+            panelNivel2Colocado = ColocarPanelFrenteAlJugador();
         }
     }
 

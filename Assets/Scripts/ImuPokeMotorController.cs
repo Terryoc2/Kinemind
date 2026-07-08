@@ -3,6 +3,9 @@ using System.Globalization;
 using ArduinoBluetoothAPI;
 using TMPro;
 using UnityEngine;
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
 
 public class ImuPokeMotorController : MonoBehaviour
 {
@@ -114,6 +117,11 @@ public class ImuPokeMotorController : MonoBehaviour
 
     public void ConnectBluetooth()
     {
+        if (!EnsureBluetoothPermissions())
+        {
+            return;
+        }
+
         AddLog("Conectar IMU desde BLUOFICIAL.");
 
         if (!bluetoothPrepared && !PrepareBluetooth())
@@ -174,6 +182,35 @@ public class ImuPokeMotorController : MonoBehaviour
 
         SetStatus("Calibracion reiniciada.");
         UpdateDataText();
+    }
+
+
+    bool EnsureBluetoothPermissions()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        bool missingPermission = false;
+
+        if (!Permission.HasUserAuthorizedPermission("android.permission.BLUETOOTH_CONNECT"))
+        {
+            Permission.RequestUserPermission("android.permission.BLUETOOTH_CONNECT");
+            missingPermission = true;
+        }
+
+        if (!Permission.HasUserAuthorizedPermission("android.permission.BLUETOOTH_SCAN"))
+        {
+            Permission.RequestUserPermission("android.permission.BLUETOOTH_SCAN");
+            missingPermission = true;
+        }
+
+        if (missingPermission)
+        {
+            pendingCalibrationAfterConnect = true;
+            SetStatus("Acepta permisos Bluetooth y vuelve a tocar Calibrar.");
+            AddLog("Permisos Bluetooth solicitados a Android.");
+            return false;
+        }
+#endif
+        return true;
     }
 
     bool PrepareBluetooth()

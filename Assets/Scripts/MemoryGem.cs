@@ -1,5 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Oculus.Interaction;
+using Oculus.Interaction.HandGrab;
 using UnityEngine;
 
 public class MemoryGem : MonoBehaviour
@@ -56,6 +58,8 @@ public class MemoryGem : MonoBehaviour
 
     private void Awake()
     {
+        AsegurarAgarreConManos();
+
         gemRenderer = GetComponent<Renderer>();
         gemRigidbody = GetComponent<Rigidbody>();
 
@@ -173,6 +177,54 @@ public class MemoryGem : MonoBehaviour
         gemRigidbody.angularVelocity = Vector3.zero;
     }
 
+    #pragma warning disable 0618
+    private void AsegurarAgarreConManos()
+    {
+        Rigidbody rigidbodyActual = GetComponent<Rigidbody>();
+        if (rigidbodyActual == null)
+        {
+            rigidbodyActual = gameObject.AddComponent<Rigidbody>();
+            rigidbodyActual.useGravity = false;
+            rigidbodyActual.isKinematic = false;
+        }
+
+        if (GetComponent<Collider>() == null)
+        {
+            SphereCollider colliderFallback = gameObject.AddComponent<SphereCollider>();
+            colliderFallback.radius = 0.5f;
+        }
+
+        Grabbable grabbable = GetComponent<Grabbable>();
+        if (grabbable == null)
+        {
+            grabbable = gameObject.AddComponent<Grabbable>();
+        }
+
+        grabbable.InjectOptionalRigidbody(rigidbodyActual);
+        grabbable.InjectOptionalTargetTransform(transform);
+        grabbable.InjectOptionalKinematicWhileSelected(true);
+        grabbable.InjectOptionalThrowWhenUnselected(true);
+
+        PhysicsGrabbable physicsGrabbable = GetComponent<PhysicsGrabbable>();
+        if (physicsGrabbable == null)
+        {
+            physicsGrabbable = gameObject.AddComponent<PhysicsGrabbable>();
+        }
+
+        physicsGrabbable.InjectPointable(grabbable);
+        physicsGrabbable.InjectRigidbody(rigidbodyActual);
+
+        HandGrabInteractable handGrabInteractable = GetComponent<HandGrabInteractable>();
+        if (handGrabInteractable == null)
+        {
+            handGrabInteractable = gameObject.AddComponent<HandGrabInteractable>();
+        }
+
+        handGrabInteractable.InjectRigidbody(rigidbodyActual);
+        handGrabInteractable.InjectOptionalPointableElement(grabbable);
+        handGrabInteractable.InjectOptionalPhysicsGrabbable(physicsGrabbable);
+    }
+    #pragma warning restore 0618
     private void GuardarComponentesDeAgarre()
     {
         Behaviour[] behaviours = GetComponents<Behaviour>();
@@ -234,3 +286,4 @@ public class MemoryGem : MonoBehaviour
         }
     }
 }
+

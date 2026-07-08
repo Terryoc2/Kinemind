@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: Terry
-  productName: JDmine
+  productName: KINDMINE
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.12156863, g: 0.12156863, b: 0.1254902, a: 1}
@@ -144,8 +144,6 @@ PlayerSettings:
   bundleVersion: 1.0
   preloadedAssets:
   - {fileID: 11400000, guid: 1abcee7134f577d43bc5785cabf19f3c, type: 2}
-  - {fileID: -5088167636621400686, guid: c0c05167581ddee4890d17777a3214b3, type: 2}
-  - {fileID: -6400769354369614112, guid: 015775e753d236f40b7016c6bd483e39, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -166,7 +164,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.Terry.JDmine
+    Android: com.Terry.KINDMINE
     Standalone: com.Terry.JDmine
   buildNumber:
     Standalone: 0

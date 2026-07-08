@@ -5,9 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/AGARRAR.unity
     guid: c19785a1904baa341a245033c9074f70
+  - enabled: 1
+    path: "Assets/Scenes/MaeO\xF1o.unity"
+    guid: 23b6746bd9b7c9f4fa478d42d6e192c6
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 015775e753d236f40b7016c6bd483e39,
       type: 2}
