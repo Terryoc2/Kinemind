@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -74912,32 +74912,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bluetoothDeviceName: ESP32_IMU_LINK
   fallbackBluetoothDeviceName: 
-  enableSecondImu: 0
-  secondBluetoothDeviceName: ESP32_IMU_LINK_2
-  secondFallbackBluetoothDeviceName: 
   calibrationSeconds: 10
   autoConnectOnCalibrate: 1
-  calibrateSecondAfterFirst: 1
   isCalibrating: 0
   isCalibrated: 0
   calibrationSecondsRemaining: 0
   calibrationOffset: {x: 0, y: 0, z: 0}
   calibrationSampleCount: 0
-  isSecondCalibrating: 0
-  isSecondCalibrated: 0
-  secondCalibrationSecondsRemaining: 0
-  secondCalibrationOffset: {x: 0, y: 0, z: 0}
-  secondCalibrationSampleCount: 0
   enableMotorFeedback: 1
   requireCalibrationForMotor: 1
   allowedMovementRange: {x: 8000, y: 8000, z: 8000}
   vibrationCommand: 8
-  secondVibrationCommand: 8
   vibrationCooldownSeconds: 2
   isOutsideMovementRange: 0
   exceededAxes: 
-  isSecondOutsideMovementRange: 0
-  secondExceededAxes: 
   sensorTargetTag: SensorTarget
   fallbackSensorTargetTag: prueba
   statusText: {fileID: 0}
@@ -74975,8 +74963,6 @@ MonoBehaviour:
     height: 290
   rawAcceleration: {x: 0, y: 0, z: 0}
   calibratedAcceleration: {x: 0, y: 0, z: 0}
-  secondRawAcceleration: {x: 0, y: 0, z: 0}
-  secondCalibratedAcceleration: {x: 0, y: 0, z: 0}
 --- !u!4 &2132436369
 Transform:
   m_ObjectHideFlags: 0
@@ -104178,7 +104164,3 @@ SceneRoots:
   - {fileID: 117982866}
   - {fileID: 571865614}
   - {fileID: 1503755912}
-
-
-
-
