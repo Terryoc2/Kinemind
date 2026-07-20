@@ -5,6 +5,43 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+[Serializable]
+public class NivelMemoriaConfig
+{
+    public string titulo = "Nivel 1";
+    public int cantidadFiguras = 2;
+    public float segundosMemorizacion = 60f;
+    public bool usarPatronInvertidoAnterior = false;
+    [Range(0f, 100f)] public float porcentajeRangoBanda1 = 40f;
+    [Range(0f, 100f)] public float porcentajeRangoBanda2 = 45f;
+    public bool activarVibracion = true;
+    public bool permitirJugarSinCalibracion = false;
+
+    public NivelMemoriaConfig()
+    {
+    }
+
+    public NivelMemoriaConfig(
+        string titulo,
+        int cantidadFiguras,
+        float segundosMemorizacion,
+        bool usarPatronInvertidoAnterior = false,
+        float porcentajeRangoBanda1 = 40f,
+        float porcentajeRangoBanda2 = 45f,
+        bool activarVibracion = true,
+        bool permitirJugarSinCalibracion = false)
+    {
+        this.titulo = titulo;
+        this.cantidadFiguras = cantidadFiguras;
+        this.segundosMemorizacion = segundosMemorizacion;
+        this.usarPatronInvertidoAnterior = usarPatronInvertidoAnterior;
+        this.porcentajeRangoBanda1 = porcentajeRangoBanda1;
+        this.porcentajeRangoBanda2 = porcentajeRangoBanda2;
+        this.activarVibracion = activarVibracion;
+        this.permitirJugarSinCalibracion = permitirJugarSinCalibracion;
+    }
+}
+
 public class PanelPrincipalManager : MonoBehaviour
 {
     [Header("Textos")]
@@ -48,11 +85,24 @@ public class PanelPrincipalManager : MonoBehaviour
     public string escenaImuBluOficial = "BLUOFICIAL";
     public float segundosCalibracionImu = 5f;
     public ImuPokeMotorController imuPokeMotorController;
+    public TMP_Text textoEstadoImu;
+    public TMP_Text textoDatosImu;
+    public TMP_Text textoDatosBanda1;
+    public TMP_Text textoDatosBanda2;
 
-    [Header("Nivel 1")]
+    [Header("Nivel Memoria")]
     public MemoryLevel1Manager nivel1Manager;
     public int totalSecuenciasNivel1 = 3;
+    public string textoOrdenarNivelMemoria = "Ordena y pon en las cajas";
     public string textoSiguienteSecuenciaNivel1 = "Pulsa continuar para ver la siguiente secuencia.";
+    public NivelMemoriaConfig[] nivelesMemoria = new NivelMemoriaConfig[]
+    {
+        new NivelMemoriaConfig("Nivel 1", 2, 60f, false, 40f, 45f),
+        new NivelMemoriaConfig("Nivel 2", 3, 45f, false, 55f, 60f),
+        new NivelMemoriaConfig("Nivel 3", 4, 30f, false, 70f, 75f),
+        new NivelMemoriaConfig("Nivel 4", 5, 15f, false, 85f, 85f),
+        new NivelMemoriaConfig("Nivel 5 - Inverso", 5, 15f, true, 85f, 85f)
+    };
 
     [Header("Transicion Nivel 2")]
     public GameObject escenarioNivel2;
@@ -86,6 +136,7 @@ public class PanelPrincipalManager : MonoBehaviour
     private bool panelNivel2Colocado = false;
     private int nivelActual = 1;
     private int secuenciaNivel1Actual = 1;
+    private MemoryGem[] patronParaNivelInverso;
 
     private void OnEnable()
     {
@@ -115,6 +166,7 @@ public class PanelPrincipalManager : MonoBehaviour
     {
         nivelActual = 1;
         secuenciaNivel1Actual = 1;
+        patronParaNivelInverso = null;
         panelNivel2Colocado = false;
         textoTitulo.text = "JKInemind";
         textoIndicacion.text = "Bienvenido";
@@ -146,6 +198,7 @@ public class PanelPrincipalManager : MonoBehaviour
         actividadIniciada = false;
         actividadCompletada = false;
         secuenciaNivel1Actual = 1;
+        patronParaNivelInverso = null;
         PrepararSecuenciaNivel1();
     }
 
@@ -195,7 +248,8 @@ public class PanelPrincipalManager : MonoBehaviour
         }
 
         controller.calibrationSeconds = segundosCalibracionImu;
-        controller.ConnectAndCalibrate(segundosCalibracionImu);
+        controller.maxComfortCalibrationSeconds = segundosCalibracionImu;
+        controller.CalibrarDesdePoke();
     }
 
     private void PrepararImuBluOficial()
@@ -240,22 +294,30 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (imuPokeMotorController.statusText == null)
         {
-            imuPokeMotorController.statusText = textoIndicacion;
+            imuPokeMotorController.statusText = textoEstadoImu != null ? textoEstadoImu : textoIndicacion;
+        }
+
+        if (imuPokeMotorController.dataText == null)
+        {
+            imuPokeMotorController.dataText = textoDatosImu;
+        }
+
+        if (imuPokeMotorController.dataTextBanda1 == null)
+        {
+            imuPokeMotorController.dataTextBanda1 = textoDatosBanda1;
+        }
+
+        if (imuPokeMotorController.dataTextBanda2 == null)
+        {
+            imuPokeMotorController.dataTextBanda2 = textoDatosBanda2;
         }
 
         return imuPokeMotorController;
     }
+
     private IEnumerator MostrarContinuarDespuesDeTiempo()
     {
-        if (!EsEscenaAgarrar())
-        {
-            yield return new WaitForSeconds(segundosParaContinuar);
-            MostrarBotonContinuar(true, true);
-            rutinaContinuar = null;
-            yield break;
-        }
-
-        int segundosRestantes = Mathf.Max(0, Mathf.CeilToInt(segundosParaContinuar));
+        int segundosRestantes = Mathf.Max(0, Mathf.CeilToInt(ObtenerSegundosMemorizacionActual()));
 
         while (segundosRestantes > 0)
         {
@@ -316,7 +378,7 @@ public class PanelPrincipalManager : MonoBehaviour
         actividadIniciada = true;
 
         textoTitulo.text = ObtenerTituloSecuenciaNivel1();
-        textoIndicacion.text = "Ordena y pon en las cajas";
+        textoIndicacion.text = textoOrdenarNivelMemoria;
 
         MostrarBotonContinuar(true, false);
 
@@ -333,13 +395,13 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (secuenciaNivel1Actual < ObtenerTotalSecuenciasNivel1())
         {
-            textoTitulo.text = "Secuencia " + secuenciaNivel1Actual + " completada";
+            textoTitulo.text = ObtenerTituloSecuenciaNivel1() + " completado";
             textoIndicacion.text = textoSiguienteSecuenciaNivel1;
             MostrarBotonContinuar(true, true);
             return;
         }
 
-        textoTitulo.text = "Nivel 1 completado";
+        textoTitulo.text = "Memoria completada";
         textoIndicacion.text = "Actividad completada.";
         MostrarBotonContinuar(false, false);
         IniciarTransicionNivel2();
@@ -351,9 +413,27 @@ public class PanelPrincipalManager : MonoBehaviour
         actividadCompletada = false;
 
         textoTitulo.text = ObtenerTituloSecuenciaNivel1();
+        AplicarConfiguracionImuNivelActual();
+
         if (nivel1Manager != null)
         {
-            nivel1Manager.PrepararPatron();
+            int cantidadFiguras = ObtenerCantidadFigurasActual();
+
+            if (DebeUsarPatronInvertidoActual())
+            {
+                nivel1Manager.PrepararPatronInvertido(patronParaNivelInverso, cantidadFiguras);
+            }
+            else
+            {
+                nivel1Manager.PrepararPatron(cantidadFiguras);
+                MemoryGem[] patronPreparado = nivel1Manager.ObtenerPatronActual();
+
+                if (patronPreparado.Length > 0)
+                {
+                    patronParaNivelInverso = patronPreparado;
+                }
+            }
+
             textoMemorizacionActual = nivel1Manager.ObtenerTextoPatron();
         }
         else
@@ -361,14 +441,7 @@ public class PanelPrincipalManager : MonoBehaviour
             textoMemorizacionActual = "Memoriza el patron y coloca cada figura en su caja.";
         }
 
-        if (EsEscenaAgarrar())
-        {
-            ActualizarTextoMemorizacion(Mathf.Max(0, Mathf.CeilToInt(segundosParaContinuar)));
-        }
-        else
-        {
-            textoIndicacion.text = textoMemorizacionActual;
-        }
+        ActualizarTextoMemorizacion(Mathf.Max(0, Mathf.CeilToInt(ObtenerSegundosMemorizacionActual())));
 
         MostrarBotonCalibrar(false);
         MostrarBotonEmpezar(false);
@@ -381,10 +454,12 @@ public class PanelPrincipalManager : MonoBehaviour
 
         rutinaContinuar = StartCoroutine(MostrarContinuarDespuesDeTiempo());
     }
+
     private bool EsEscenaAgarrar()
     {
         return string.Equals(SceneManager.GetActiveScene().name, "AGARRAR", StringComparison.OrdinalIgnoreCase);
     }
+
     private void ActualizarTextoMemorizacion(int segundosRestantes)
     {
         if (textoIndicacion == null)
@@ -398,21 +473,103 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (segundosRestantes > 0)
         {
-            textoIndicacion.text = textoBase + "\n\nContinuar en: " + segundosRestantes;
+            textoIndicacion.text = textoBase + "\n\nTiempo para memorizar: " + segundosRestantes + " s";
         }
         else
         {
-            textoIndicacion.text = textoBase + "\n\nYa puedes continuar.";
+            textoIndicacion.text = textoBase + "\n\nTiempo terminado. Pulsa continuar para ordenar.";
         }
     }
+
     private int ObtenerTotalSecuenciasNivel1()
     {
+        if (nivelesMemoria != null && nivelesMemoria.Length > 0)
+        {
+            return nivelesMemoria.Length;
+        }
+
         return Mathf.Max(1, totalSecuenciasNivel1);
+    }
+
+    private NivelMemoriaConfig ObtenerConfigMemoriaActual()
+    {
+        if (nivelesMemoria == null || nivelesMemoria.Length == 0)
+        {
+            return null;
+        }
+
+        int index = Mathf.Clamp(secuenciaNivel1Actual - 1, 0, nivelesMemoria.Length - 1);
+        return nivelesMemoria[index];
+    }
+
+    private int ObtenerCantidadFigurasActual()
+    {
+        NivelMemoriaConfig config = ObtenerConfigMemoriaActual();
+
+        if (config != null)
+        {
+            return Mathf.Max(1, config.cantidadFiguras);
+        }
+
+        if (nivel1Manager != null)
+        {
+            return Mathf.Max(1, nivel1Manager.patternLength);
+        }
+
+        return 3;
+    }
+
+    private float ObtenerSegundosMemorizacionActual()
+    {
+        NivelMemoriaConfig config = ObtenerConfigMemoriaActual();
+
+        if (config != null)
+        {
+            return Mathf.Max(0f, config.segundosMemorizacion);
+        }
+
+        return Mathf.Max(0f, segundosParaContinuar);
+    }
+
+    private bool DebeUsarPatronInvertidoActual()
+    {
+        NivelMemoriaConfig config = ObtenerConfigMemoriaActual();
+        return config != null && config.usarPatronInvertidoAnterior;
+    }
+
+    private void AplicarConfiguracionImuNivelActual()
+    {
+        NivelMemoriaConfig config = ObtenerConfigMemoriaActual();
+
+        if (config == null || !DebeUsarImuEnEstaEscena())
+        {
+            return;
+        }
+
+        ImuPokeMotorController controller = ObtenerImuPokeMotorController();
+
+        if (controller == null)
+        {
+            return;
+        }
+
+        controller.AplicarConfiguracionNivel(
+            config.porcentajeRangoBanda1,
+            config.porcentajeRangoBanda2,
+            config.activarVibracion,
+            !config.permitirJugarSinCalibracion);
     }
 
     private string ObtenerTituloSecuenciaNivel1()
     {
-        return "Nivel 1 - Secuencia " + secuenciaNivel1Actual + "/" + ObtenerTotalSecuenciasNivel1();
+        NivelMemoriaConfig config = ObtenerConfigMemoriaActual();
+
+        if (config != null && !string.IsNullOrWhiteSpace(config.titulo))
+        {
+            return config.titulo;
+        }
+
+        return "Nivel " + secuenciaNivel1Actual;
     }
 
     private void IniciarTransicionNivel2()
@@ -449,7 +606,7 @@ public class PanelPrincipalManager : MonoBehaviour
         MostrarBotonEmpezar(false);
         MostrarBotonContinuar(false, false);
 
-        textoTitulo.text = "Nivel 1 completado";
+        textoTitulo.text = "Memoria completada";
         textoIndicacion.text = "Se te transportara al siguiente nivel.";
 
         yield return new WaitForSeconds(segundosEntreCuenta);
@@ -993,6 +1150,7 @@ public class PanelPrincipalManager : MonoBehaviour
             collider.enabled = visible;
         }
     }
+
     private void MoverBotonPokePrincipal(GameObject botonPoke, Vector3 posicionLocal)
     {
         if (botonPoke == null)
@@ -1013,8 +1171,5 @@ public class PanelPrincipalManager : MonoBehaviour
 
         return botonPoke;
     }
-
 }
-
-
 

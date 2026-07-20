@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -15,6 +15,11 @@ public class MemoryBoxTarget : MonoBehaviour
     [Header("Colocacion")]
     public Transform snapPoint;
     public Renderer feedbackRenderer;
+
+    [Header("Deteccion")]
+    public bool asegurarTriggerDeteccion = true;
+    public Vector3 triggerSize = new Vector3(0.55f, 0.35f, 0.55f);
+    public Vector3 triggerCenter = new Vector3(0f, 0.15f, 0f);
 
     [Header("Colores")]
     public Color normalColor = Color.white;
@@ -41,6 +46,11 @@ public class MemoryBoxTarget : MonoBehaviour
         {
             feedbackMaterial = feedbackRenderer.material;
             normalColor = feedbackMaterial.color;
+        }
+
+        if (asegurarTriggerDeteccion)
+        {
+            AsegurarTriggerDeteccion();
         }
     }
 
@@ -92,6 +102,11 @@ public class MemoryBoxTarget : MonoBehaviour
         manager = levelManager;
         expectedGem = gem;
         solved = false;
+
+        if (asegurarTriggerDeteccion)
+        {
+            AsegurarTriggerDeteccion();
+        }
 
         SetReferenceVisible(true);
 
@@ -166,6 +181,26 @@ public class MemoryBoxTarget : MonoBehaviour
         yield return new WaitForSeconds(wrongFlashTime);
         SetFeedbackColor(normalColor);
         wrongRoutine = null;
+    }
+
+    private void AsegurarTriggerDeteccion()
+    {
+        Collider[] colliders = GetComponents<Collider>();
+
+        foreach (Collider collider in colliders)
+        {
+            if (collider != null && collider.isTrigger)
+            {
+                collider.enabled = true;
+                return;
+            }
+        }
+
+        BoxCollider trigger = gameObject.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.size = triggerSize;
+        trigger.center = triggerCenter;
+        trigger.enabled = true;
     }
 
     private void SetReferenceVisible(bool visible)
