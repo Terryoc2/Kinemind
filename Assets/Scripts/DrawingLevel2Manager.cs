@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using BeyondLimitsStudios.VRInteractables;
+using TMPro;
 using UnityEngine;
 
 public enum DrawingLevel2PatternType
@@ -10,7 +11,8 @@ public enum DrawingLevel2PatternType
     Triangulo,
     Cuadrado,
     Circulo,
-    Estrella
+    Estrella,
+    Espiral
 }
 
 [System.Serializable]
@@ -20,11 +22,32 @@ public class DrawingLevel2Pattern
     public DrawingLevel2PatternType tipo;
     public int puntos;
 
+    public DrawingLevel2Pattern()
+    {
+    }
+
     public DrawingLevel2Pattern(string nombre, DrawingLevel2PatternType tipo, int puntos)
     {
         this.nombre = nombre;
         this.tipo = tipo;
         this.puntos = puntos;
+    }
+}
+
+[System.Serializable]
+public class DrawingLevel2Phase
+{
+    public string nombre;
+    public List<DrawingLevel2Pattern> patrones = new List<DrawingLevel2Pattern>();
+
+    public DrawingLevel2Phase()
+    {
+    }
+
+    public DrawingLevel2Phase(string nombre, params DrawingLevel2Pattern[] patrones)
+    {
+        this.nombre = nombre;
+        this.patrones = new List<DrawingLevel2Pattern>(patrones);
     }
 }
 
@@ -35,6 +58,8 @@ public class DrawingLevel2Manager : MonoBehaviour
     public Transform tablero;
     public Transform marcador;
     public Transform puntaMarcador;
+    public bool buscarMarcadorPorNombre = true;
+    public string nombreMarcadorPreferido = "BLANCO";
 
     [Header("Trazo")]
     public int puntosNecesarios = 3;
@@ -58,6 +83,51 @@ public class DrawingLevel2Manager : MonoBehaviour
         new DrawingLevel2Pattern("Estrella", DrawingLevel2PatternType.Estrella, 11)
     };
 
+    [Header("Fases")]
+    public bool usarFases = true;
+    public List<DrawingLevel2Phase> fases = new List<DrawingLevel2Phase>
+    {
+        new DrawingLevel2Phase(
+            "Fase 1 - Basica",
+            new DrawingLevel2Pattern("Linea", DrawingLevel2PatternType.Linea, 3),
+            new DrawingLevel2Pattern("Cuadrado", DrawingLevel2PatternType.Cuadrado, 5)),
+        new DrawingLevel2Phase(
+            "Fase 2 - Intermedia",
+            new DrawingLevel2Pattern("Triangulo", DrawingLevel2PatternType.Triangulo, 4),
+            new DrawingLevel2Pattern("Circulo", DrawingLevel2PatternType.Circulo, 12)),
+        new DrawingLevel2Phase(
+            "Fase 3 - Avanzada",
+            new DrawingLevel2Pattern("Estrella", DrawingLevel2PatternType.Estrella, 16),
+            new DrawingLevel2Pattern("Espiral", DrawingLevel2PatternType.Espiral, 22))
+    };
+
+    [Header("Transicion entre fases")]
+    public bool mostrarCuentaRegresivaEntreFases = true;
+    public int segundosCuentaRegresivaEntreFases = 3;
+    public float segundosEntreCuentaRegresivaFase = 1f;
+    public TMP_Text textoTransicionFase;
+    public string textoFaseCompletada = "Fase completada";
+    public string textoSiguienteFase = "Siguiente fase";
+    public Vector2 posicionTextoTransicionFase = new Vector2(0f, 0.15f);
+    public float separacionTextoTransicionFase = 0.05f;
+    public float anchoTextoTransicionFase = 1.4f;
+    public float altoTextoTransicionFase = 0.45f;
+    public float tamanoTextoTransicionFase = 0.18f;
+    public Color colorTextoTransicionFase = Color.white;
+
+    [Header("Pizarra")]
+    public bool limpiarPizarraAlIniciar = true;
+    public bool limpiarPizarraAlCambiarFigura = true;
+    public bool limpiarPizarraAlReiniciarFigura = true;
+
+    [Header("Validacion")]
+    public bool contarErroresFueraDeOrden = true;
+    public bool validarCercaniaAlTrazo = true;
+    public float distanciaMaximaAlTrazo = 0.28f;
+    public float tiempoFueraDelTrazoParaError = 0.65f;
+    public int erroresAntesDeReiniciarFigura = 0;
+    public bool mostrarErroresEnConsola = true;
+
     [Header("Colores")]
     public Color colorPendiente = new Color(1f, 0.85f, 0.15f, 0.85f);
     public Color colorActual = new Color(0.1f, 0.65f, 1f, 0.9f);
@@ -70,8 +140,12 @@ public class DrawingLevel2Manager : MonoBehaviour
     private bool actividadActiva;
     private Coroutine rutinaCompletar;
     private int patronActual;
+    private int faseActual;
+    private int figuraActualEnFase;
+    private int erroresActuales;
     private DrawingBoardTexture tableroDibujo;
     private float puedeRegistrarDesde;
+    private float fueraDelTrazoDesde;
 
     private void Update()
     {
@@ -87,6 +161,7 @@ public class DrawingLevel2Manager : MonoBehaviour
                 RegistrarPorDistancia(puntos[puntoActual]);
             }
 
+            ValidarCercaniaAlTrazo();
             return;
         }
 
@@ -118,6 +193,7 @@ public class DrawingLevel2Manager : MonoBehaviour
             actividadRoot = gameObject;
         }
 
+        OcultarTextoTransicionFase();
         actividadRoot.SetActive(false);
     }
 
@@ -130,12 +206,23 @@ public class DrawingLevel2Manager : MonoBehaviour
 
         actividadRoot.SetActive(true);
         BuscarReferencias();
+        AsegurarFases();
         AsegurarPatrones();
 
         patronActual = 0;
+        faseActual = 0;
+        figuraActualEnFase = 0;
         puntoActual = 0;
+        erroresActuales = 0;
         actividadActiva = true;
         puedeRegistrarDesde = 0f;
+        fueraDelTrazoDesde = 0f;
+
+        OcultarTextoTransicionFase();
+        if (limpiarPizarraAlIniciar)
+        {
+            LimpiarPizarra();
+        }
 
         CrearPuntosDeTrazo();
         ActualizarColores();
@@ -182,6 +269,11 @@ public class DrawingLevel2Manager : MonoBehaviour
 
         if (exigirOrden && punto.Indice != puntoActual)
         {
+            if (contarErroresFueraDeOrden && !EstaCercaDelPuntoActual())
+            {
+                RegistrarError("Punto fuera de orden: " + punto.Indice + ". Esperado: " + puntoActual);
+            }
+
             return;
         }
 
@@ -192,6 +284,7 @@ public class DrawingLevel2Manager : MonoBehaviour
 
         punto.MarcarCompletado();
         puedeRegistrarDesde = Time.time + pausaEntrePuntos;
+        fueraDelTrazoDesde = 0f;
 
         if (exigirOrden)
         {
@@ -245,6 +338,11 @@ public class DrawingLevel2Manager : MonoBehaviour
         if (tablero == null)
         {
             tablero = BuscarHijoPorNombre("Tablero");
+        }
+
+        if (buscarMarcadorPorNombre)
+        {
+            AsignarMarcadorPreferido();
         }
 
         if (marcador == null)
@@ -313,7 +411,58 @@ public class DrawingLevel2Manager : MonoBehaviour
 
         foreach (Transform hijo in hijos)
         {
-            if (hijo.name.Contains(nombre))
+            if (hijo.name.IndexOf(nombre, System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return hijo;
+            }
+        }
+
+        return null;
+    }
+
+    private void AsignarMarcadorPreferido()
+    {
+        if (actividadRoot == null || string.IsNullOrWhiteSpace(nombreMarcadorPreferido))
+        {
+            return;
+        }
+
+        Transform preferido = BuscarHijoPorNombreExacto(nombreMarcadorPreferido);
+
+        if (preferido == null)
+        {
+            preferido = BuscarHijoPorNombre(nombreMarcadorPreferido);
+        }
+
+        if (preferido == null)
+        {
+            return;
+        }
+
+        Marker marker = preferido.GetComponentInChildren<Marker>(true);
+
+        if (marker == null)
+        {
+            marker = preferido.GetComponentInParent<Marker>(true);
+        }
+
+        marcador = preferido;
+
+        if (marker != null && marker.transform != preferido && !marker.transform.IsChildOf(preferido))
+        {
+            marcador = marker.transform;
+        }
+
+        puntaMarcador = BuscarPuntaDelMarcador(preferido);
+    }
+
+    private Transform BuscarHijoPorNombreExacto(string nombre)
+    {
+        Transform[] hijos = actividadRoot.GetComponentsInChildren<Transform>(true);
+
+        foreach (Transform hijo in hijos)
+        {
+            if (string.Equals(hijo.name, nombre, System.StringComparison.OrdinalIgnoreCase))
             {
                 return hijo;
             }
@@ -357,6 +506,18 @@ public class DrawingLevel2Manager : MonoBehaviour
 
     private DrawingLevel2Pattern ObtenerPatronActual()
     {
+        if (usarFases)
+        {
+            AsegurarFases();
+            DrawingLevel2Phase fase = ObtenerFaseActual();
+
+            if (fase != null && fase.patrones != null && fase.patrones.Count > 0)
+            {
+                figuraActualEnFase = Mathf.Clamp(figuraActualEnFase, 0, fase.patrones.Count - 1);
+                return fase.patrones[figuraActualEnFase];
+            }
+        }
+
         AsegurarPatrones();
 
         if (!usarPatronesProgresivos)
@@ -370,7 +531,12 @@ public class DrawingLevel2Manager : MonoBehaviour
 
     private void AsegurarPatrones()
     {
-        if (patrones != null && patrones.Count > 0 && TienePatron(DrawingLevel2PatternType.Estrella))
+        if (usarFases)
+        {
+            return;
+        }
+
+        if (patrones != null && patrones.Count > 0)
         {
             return;
         }
@@ -382,6 +548,89 @@ public class DrawingLevel2Manager : MonoBehaviour
             new DrawingLevel2Pattern("Circulo", DrawingLevel2PatternType.Circulo, 10),
             new DrawingLevel2Pattern("Estrella", DrawingLevel2PatternType.Estrella, 11)
         };
+    }
+
+    private void AsegurarFases()
+    {
+        if (!usarFases)
+        {
+            return;
+        }
+
+        if (fases != null && fases.Count > 0 && TieneFaseConPatron(DrawingLevel2PatternType.Espiral))
+        {
+            LimpiarFasesVacias();
+            return;
+        }
+
+        fases = new List<DrawingLevel2Phase>
+        {
+            new DrawingLevel2Phase(
+                "Fase 1 - Basica",
+                new DrawingLevel2Pattern("Linea", DrawingLevel2PatternType.Linea, 3),
+                new DrawingLevel2Pattern("Cuadrado", DrawingLevel2PatternType.Cuadrado, 5)),
+            new DrawingLevel2Phase(
+                "Fase 2 - Intermedia",
+                new DrawingLevel2Pattern("Triangulo", DrawingLevel2PatternType.Triangulo, 4),
+                new DrawingLevel2Pattern("Circulo", DrawingLevel2PatternType.Circulo, 12)),
+            new DrawingLevel2Phase(
+                "Fase 3 - Avanzada",
+                new DrawingLevel2Pattern("Estrella", DrawingLevel2PatternType.Estrella, 16),
+                new DrawingLevel2Pattern("Espiral", DrawingLevel2PatternType.Espiral, 22))
+        };
+    }
+
+    private void LimpiarFasesVacias()
+    {
+        if (fases == null)
+        {
+            return;
+        }
+
+        for (int i = fases.Count - 1; i >= 0; i--)
+        {
+            if (fases[i] == null || fases[i].patrones == null || fases[i].patrones.Count == 0)
+            {
+                fases.RemoveAt(i);
+            }
+        }
+    }
+
+    private bool TieneFaseConPatron(DrawingLevel2PatternType tipo)
+    {
+        if (fases == null)
+        {
+            return false;
+        }
+
+        foreach (DrawingLevel2Phase fase in fases)
+        {
+            if (fase == null || fase.patrones == null)
+            {
+                continue;
+            }
+
+            foreach (DrawingLevel2Pattern patron in fase.patrones)
+            {
+                if (patron != null && patron.tipo == tipo)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private DrawingLevel2Phase ObtenerFaseActual()
+    {
+        if (fases == null || fases.Count == 0)
+        {
+            return null;
+        }
+
+        faseActual = Mathf.Clamp(faseActual, 0, fases.Count - 1);
+        return fases[faseActual];
     }
 
     private bool TienePatron(DrawingLevel2PatternType tipo)
@@ -404,18 +653,25 @@ public class DrawingLevel2Manager : MonoBehaviour
 
     private List<Vector2> CrearCoordenadasPatron(DrawingLevel2Pattern patron)
     {
+        if (patron == null)
+        {
+            return CrearLinea(Mathf.Max(2, puntosNecesarios));
+        }
+
         switch (patron.tipo)
         {
             case DrawingLevel2PatternType.ZigZag:
                 return CrearZigZag(Mathf.Max(5, patron.puntos));
             case DrawingLevel2PatternType.Triangulo:
-                return CrearTriangulo();
+                return CrearTriangulo(Mathf.Max(4, patron.puntos));
             case DrawingLevel2PatternType.Cuadrado:
-                return CrearCuadrado();
+                return CrearCuadrado(Mathf.Max(5, patron.puntos));
             case DrawingLevel2PatternType.Circulo:
                 return CrearCirculo(Mathf.Max(8, patron.puntos));
             case DrawingLevel2PatternType.Estrella:
-                return CrearEstrella();
+                return CrearEstrella(Mathf.Max(6, patron.puntos));
+            case DrawingLevel2PatternType.Espiral:
+                return CrearEspiral(Mathf.Max(12, patron.puntos));
             default:
                 return CrearLinea(Mathf.Max(2, patron.puntos));
         }
@@ -449,26 +705,25 @@ public class DrawingLevel2Manager : MonoBehaviour
         return resultado;
     }
 
-    private List<Vector2> CrearTriangulo()
+    private List<Vector2> CrearTriangulo(int cantidad)
     {
-        return new List<Vector2>
+        return CrearRutaInterpolada(new List<Vector2>
         {
             new Vector2(0f, 0.55f),
             new Vector2(-0.6f, -0.45f),
-            new Vector2(0.6f, -0.45f),
-            new Vector2(0f, 0.55f)
-        };
+            new Vector2(0.6f, -0.45f)
+        }, cantidad, true);
     }
 
-    private List<Vector2> CrearCuadrado()
+    private List<Vector2> CrearCuadrado(int cantidad)
     {
-        return new List<Vector2>
+        return CrearRutaInterpolada(new List<Vector2>
         {
             new Vector2(-0.55f, 0.45f),
             new Vector2(0.55f, 0.45f),
             new Vector2(0.55f, -0.45f),
             new Vector2(-0.55f, -0.45f)
-        };
+        }, cantidad, true);
     }
 
     private List<Vector2> CrearCirculo(int cantidad)
@@ -477,25 +732,77 @@ public class DrawingLevel2Manager : MonoBehaviour
 
         for (int i = 0; i < cantidad; i++)
         {
-            float angulo = i / (float)cantidad * Mathf.PI * 2f;
+            float angulo = cantidad == 1 ? 0f : i / (float)(cantidad - 1) * Mathf.PI * 2f;
             resultado.Add(new Vector2(Mathf.Cos(angulo) * 0.5f, Mathf.Sin(angulo) * 0.5f));
         }
 
         return resultado;
     }
 
-    private List<Vector2> CrearEstrella()
+    private List<Vector2> CrearEstrella(int cantidad)
     {
-        List<Vector2> resultado = new List<Vector2>();
-        const int puntas = 5;
+        List<Vector2> vertices = new List<Vector2>();
         const float radioExterno = 0.55f;
         const float radioInterno = 0.24f;
 
-        for (int i = 0; i < puntas * 2; i++)
+        for (int i = 0; i < 10; i++)
         {
             float radio = i % 2 == 0 ? radioExterno : radioInterno;
-            float angulo = Mathf.PI * 0.5f + i * Mathf.PI / puntas;
+            float angulo = Mathf.PI * 0.5f + i * Mathf.PI / 5f;
+            vertices.Add(new Vector2(Mathf.Cos(angulo) * radio, Mathf.Sin(angulo) * radio));
+        }
+
+        return CrearRutaInterpolada(vertices, Mathf.Clamp(cantidad, 11, 16), true);
+    }
+
+    private List<Vector2> CrearEspiral(int cantidad)
+    {
+        List<Vector2> resultado = new List<Vector2>();
+        float vueltas = 2.45f;
+
+        for (int i = 0; i < cantidad; i++)
+        {
+            float t = cantidad == 1 ? 1f : i / (float)(cantidad - 1);
+            float radio = Mathf.Lerp(0.56f, 0.05f, t);
+            float angulo = Mathf.Lerp(0f, vueltas * Mathf.PI * 2f, t);
             resultado.Add(new Vector2(Mathf.Cos(angulo) * radio, Mathf.Sin(angulo) * radio));
+        }
+
+        return resultado;
+    }
+
+    private List<Vector2> CrearRutaInterpolada(List<Vector2> vertices, int cantidad, bool cerrar)
+    {
+        List<Vector2> resultado = new List<Vector2>();
+
+        if (vertices == null || vertices.Count == 0)
+        {
+            return resultado;
+        }
+
+        if (vertices.Count == 1 || cantidad <= 1)
+        {
+            resultado.Add(vertices[0]);
+            return resultado;
+        }
+
+        List<Vector2> ruta = new List<Vector2>(vertices);
+
+        if (cerrar)
+        {
+            ruta.Add(vertices[0]);
+        }
+
+        int segmentos = Mathf.Max(1, ruta.Count - 1);
+        cantidad = Mathf.Max(ruta.Count, cantidad);
+
+        for (int i = 0; i < cantidad; i++)
+        {
+            float tGlobal = i / (float)(cantidad - 1);
+            float segmentoFloat = tGlobal * segmentos;
+            int segmento = Mathf.Min(Mathf.FloorToInt(segmentoFloat), segmentos - 1);
+            float tSegmento = segmentoFloat - segmento;
+            resultado.Add(Vector2.Lerp(ruta[segmento], ruta[segmento + 1], tSegmento));
         }
 
         return resultado;
@@ -768,6 +1075,103 @@ public class DrawingLevel2Manager : MonoBehaviour
         return marcador != null && (other.transform == marcador || other.transform.IsChildOf(marcador));
     }
 
+    private bool EstaCercaDelPuntoActual()
+    {
+        Transform referencia = ObtenerPuntaMarcador();
+
+        if (referencia == null || puntoActual < 0 || puntoActual >= puntos.Count)
+        {
+            return false;
+        }
+
+        return Vector3.Distance(referencia.position, puntos[puntoActual].transform.position) <= radioDeteccion * 1.35f;
+    }
+
+    private void ValidarCercaniaAlTrazo()
+    {
+        if (!validarCercaniaAlTrazo || !actividadActiva || puntos.Count < 2 || puntoActual <= 0 || puntoActual >= puntos.Count)
+        {
+            fueraDelTrazoDesde = 0f;
+            return;
+        }
+
+        Transform referencia = ObtenerPuntaMarcador();
+
+        if (referencia == null)
+        {
+            return;
+        }
+
+        Vector3 inicio = puntos[puntoActual - 1].transform.position;
+        Vector3 fin = puntos[puntoActual].transform.position;
+        float distancia = DistanciaPuntoSegmento(referencia.position, inicio, fin);
+
+        if (distancia <= distanciaMaximaAlTrazo)
+        {
+            fueraDelTrazoDesde = 0f;
+            return;
+        }
+
+        if (fueraDelTrazoDesde <= 0f)
+        {
+            fueraDelTrazoDesde = Time.time;
+            return;
+        }
+
+        if (Time.time - fueraDelTrazoDesde >= Mathf.Max(0.05f, tiempoFueraDelTrazoParaError))
+        {
+            RegistrarError("Fuera del trazado entre punto " + puntoActual + " y " + (puntoActual + 1));
+            fueraDelTrazoDesde = Time.time;
+        }
+    }
+
+    private float DistanciaPuntoSegmento(Vector3 punto, Vector3 inicio, Vector3 fin)
+    {
+        Vector3 segmento = fin - inicio;
+
+        if (segmento.sqrMagnitude <= 0.0001f)
+        {
+            return Vector3.Distance(punto, inicio);
+        }
+
+        float t = Vector3.Dot(punto - inicio, segmento) / segmento.sqrMagnitude;
+        t = Mathf.Clamp01(t);
+        Vector3 cercano = inicio + segmento * t;
+        return Vector3.Distance(punto, cercano);
+    }
+
+    private void RegistrarError(string motivo)
+    {
+        erroresActuales++;
+
+        if (mostrarErroresEnConsola)
+        {
+            Debug.LogWarning("Nivel 2 trazado: error " + erroresActuales + " - " + motivo);
+        }
+
+        if (erroresAntesDeReiniciarFigura > 0 && erroresActuales >= erroresAntesDeReiniciarFigura)
+        {
+            ReiniciarFiguraActual();
+        }
+    }
+
+    private void ReiniciarFiguraActual()
+    {
+        puntoActual = 0;
+        erroresActuales = 0;
+        puedeRegistrarDesde = Time.time + pausaEntrePuntos;
+        fueraDelTrazoDesde = 0f;
+        actividadActiva = true;
+
+        if (limpiarPizarraAlReiniciarFigura)
+        {
+            LimpiarPizarra();
+        }
+
+        CrearPuntosDeTrazo();
+        ActualizarColores();
+    }
+
     private void CompletarActividad()
     {
         actividadActiva = false;
@@ -784,6 +1188,11 @@ public class DrawingLevel2Manager : MonoBehaviour
 
         if (DebeAvanzarAlSiguientePatron())
         {
+            if (limpiarPizarraAlCambiarFigura)
+            {
+                LimpiarPizarra();
+            }
+
             rutinaCompletar = StartCoroutine(AvanzarAlSiguientePatron());
         }
         else
@@ -794,22 +1203,194 @@ public class DrawingLevel2Manager : MonoBehaviour
 
     private bool DebeAvanzarAlSiguientePatron()
     {
+        if (usarFases)
+        {
+            DrawingLevel2Phase fase = ObtenerFaseActual();
+
+            if (fase == null || fase.patrones == null || fase.patrones.Count == 0)
+            {
+                return false;
+            }
+
+            if (figuraActualEnFase < fase.patrones.Count - 1)
+            {
+                return true;
+            }
+
+            return fases != null && faseActual < fases.Count - 1;
+        }
+
         return usarPatronesProgresivos && patrones != null && patronActual < patrones.Count - 1;
     }
 
     private IEnumerator AvanzarAlSiguientePatron()
     {
-        yield return new WaitForSeconds(Mathf.Clamp(segundosEntrePatrones, 0f, 0.25f));
+        bool cambiaraDeFase = HayCambioDeFasePendiente();
 
-        patronActual++;
+        if (cambiaraDeFase && mostrarCuentaRegresivaEntreFases)
+        {
+            yield return StartCoroutine(MostrarCuentaRegresivaCambioFase());
+        }
+        else
+        {
+            yield return new WaitForSeconds(Mathf.Max(0f, segundosEntrePatrones));
+        }
+
+        if (usarFases)
+        {
+            AvanzarIndiceFase();
+        }
+        else
+        {
+            patronActual++;
+        }
+
         puntoActual = 0;
+        erroresActuales = 0;
         actividadActiva = true;
         puedeRegistrarDesde = 0f;
+        fueraDelTrazoDesde = 0f;
 
         CrearPuntosDeTrazo();
         ActualizarColores();
 
         rutinaCompletar = null;
+    }
+
+    private bool HayCambioDeFasePendiente()
+    {
+        if (!usarFases || fases == null || fases.Count == 0)
+        {
+            return false;
+        }
+
+        DrawingLevel2Phase fase = ObtenerFaseActual();
+
+        if (fase == null || fase.patrones == null || fase.patrones.Count == 0)
+        {
+            return false;
+        }
+
+        return figuraActualEnFase >= fase.patrones.Count - 1 && faseActual < fases.Count - 1;
+    }
+
+    private IEnumerator MostrarCuentaRegresivaCambioFase()
+    {
+        int segundos = Mathf.Max(1, segundosCuentaRegresivaEntreFases);
+        float espera = Mathf.Max(0.05f, segundosEntreCuentaRegresivaFase);
+        TMP_Text texto = ObtenerTextoTransicionFase();
+
+        for (int i = segundos; i >= 1; i--)
+        {
+            if (texto != null)
+            {
+                texto.gameObject.SetActive(true);
+                PosicionarTextoTransicionFase(texto);
+                texto.text = textoFaseCompletada + "\n" + textoSiguienteFase + ": " + ObtenerNombreSiguienteFase() + "\n" + i;
+            }
+
+            yield return new WaitForSeconds(espera);
+        }
+
+        OcultarTextoTransicionFase();
+    }
+
+    private TMP_Text ObtenerTextoTransicionFase()
+    {
+        if (textoTransicionFase != null)
+        {
+            return textoTransicionFase;
+        }
+
+        if (actividadRoot == null)
+        {
+            actividadRoot = gameObject;
+        }
+
+        GameObject textoObject = new GameObject("TextoTransicionFaseNivel2");
+        textoObject.transform.SetParent(actividadRoot.transform, true);
+
+        TextMeshPro texto3D = textoObject.AddComponent<TextMeshPro>();
+        texto3D.alignment = TextAlignmentOptions.Center;
+        texto3D.color = colorTextoTransicionFase;
+        texto3D.fontSize = tamanoTextoTransicionFase;
+        texto3D.enableWordWrapping = true;
+        texto3D.raycastTarget = false;
+        texto3D.rectTransform.sizeDelta = new Vector2(anchoTextoTransicionFase, altoTextoTransicionFase);
+
+        textoTransicionFase = texto3D;
+        PosicionarTextoTransicionFase(textoTransicionFase);
+        return textoTransicionFase;
+    }
+
+    private void PosicionarTextoTransicionFase(TMP_Text texto)
+    {
+        if (texto == null || tablero == null)
+        {
+            return;
+        }
+
+        if (!ObtenerPlanoTablero(out Vector3 centro, out Vector3 normal, out Vector3 horizontal, out Vector3 vertical, out float mitadAncho, out float mitadAlto))
+        {
+            return;
+        }
+
+        texto.transform.position = centro
+            + horizontal * (posicionTextoTransicionFase.x * mitadAncho)
+            + vertical * (posicionTextoTransicionFase.y * mitadAlto)
+            + normal * Mathf.Max(separacionDelTablero, separacionTextoTransicionFase);
+        texto.transform.rotation = Quaternion.LookRotation(-normal, vertical);
+        texto.transform.localScale = Vector3.one;
+        texto.rectTransform.sizeDelta = new Vector2(anchoTextoTransicionFase, altoTextoTransicionFase);
+        texto.fontSize = tamanoTextoTransicionFase;
+        texto.color = colorTextoTransicionFase;
+    }
+
+    private void LimpiarPizarra()
+    {
+        if (tableroDibujo == null)
+        {
+            BuscarReferencias();
+        }
+
+        if (tableroDibujo != null)
+        {
+            tableroDibujo.ClearBoard();
+        }
+    }
+
+    private string ObtenerNombreSiguienteFase()
+    {
+        if (fases == null || fases.Count == 0)
+        {
+            return "";
+        }
+
+        int indice = Mathf.Clamp(faseActual + 1, 0, fases.Count - 1);
+        DrawingLevel2Phase fase = fases[indice];
+        return fase != null && !string.IsNullOrWhiteSpace(fase.nombre) ? fase.nombre : "Fase " + (indice + 1);
+    }
+
+    private void OcultarTextoTransicionFase()
+    {
+        if (textoTransicionFase != null)
+        {
+            textoTransicionFase.gameObject.SetActive(false);
+        }
+    }
+
+    private void AvanzarIndiceFase()
+    {
+        DrawingLevel2Phase fase = ObtenerFaseActual();
+
+        if (fase != null && fase.patrones != null && figuraActualEnFase < fase.patrones.Count - 1)
+        {
+            figuraActualEnFase++;
+            return;
+        }
+
+        faseActual = Mathf.Min(faseActual + 1, fases.Count - 1);
+        figuraActualEnFase = 0;
     }
 
     private IEnumerator NotificarCompletado()
