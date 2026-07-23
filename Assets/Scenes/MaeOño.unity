@@ -76068,7 +76068,7 @@ MonoBehaviour:
   calibrationSecondsRemaining: 0
   calibrationOffset: {x: 0, y: 0, z: 0}
   calibrationSampleCount: 0
-  usarDosBandas: 0
+  usarDosBandas: 1
   staleSecondsUnity: 1.5
   dataTextBanda1: {fileID: 0}
   dataTextBanda2: {fileID: 0}
