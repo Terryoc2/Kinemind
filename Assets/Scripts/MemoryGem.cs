@@ -15,6 +15,13 @@ public class MemoryGem : MonoBehaviour
     public GameObject objectToHide;
     public bool bloquearAgarreAlColocar = true;
 
+    [Header("Ajuste al colocar")]
+    public Vector3 offsetLocalAlColocar = Vector3.zero;
+    public Vector3 rotacionLocalAlColocar = Vector3.zero;
+    public bool centrarVisualAlColocar = false;
+    public bool centrarVisualAutomaticoDiamante = true;
+    public bool congelarFisicaAlColocar = true;
+
     private Renderer gemRenderer;
     private Color originalColor;
     private Rigidbody gemRigidbody;
@@ -140,6 +147,7 @@ public class MemoryGem : MonoBehaviour
             return;
         }
 
+        BloquearAgarre();
         DetenerFisica();
 
         if (gemRigidbody != null)
@@ -148,9 +156,23 @@ public class MemoryGem : MonoBehaviour
             gemRigidbody.isKinematic = true;
         }
 
-        transform.SetPositionAndRotation(snapPoint.position, snapPoint.rotation);
+        Vector3 posicionFinal = snapPoint.TransformPoint(offsetLocalAlColocar);
+        Quaternion rotacionFinal = snapPoint.rotation * Quaternion.Euler(rotacionLocalAlColocar);
+
+        transform.SetPositionAndRotation(posicionFinal, rotacionFinal);
+
+        if (centrarVisualAlColocar || (centrarVisualAutomaticoDiamante && EsDiamante()))
+        {
+            CentrarVisualEn(posicionFinal);
+        }
+
         transform.SetParent(snapPoint, true);
-        BloquearAgarre();
+
+        if (congelarFisicaAlColocar)
+        {
+            CongelarFisicaHijos();
+        }
+
         Highlight(false);
     }
 
@@ -175,6 +197,69 @@ public class MemoryGem : MonoBehaviour
 
         gemRigidbody.velocity = Vector3.zero;
         gemRigidbody.angularVelocity = Vector3.zero;
+    }
+
+    private void CongelarFisicaHijos()
+    {
+        Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
+
+        foreach (Rigidbody rb in rigidbodies)
+        {
+            if (rb == null)
+            {
+                continue;
+            }
+
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.useGravity = false;
+            rb.isKinematic = true;
+        }
+    }
+
+    private bool EsDiamante()
+    {
+        string nombre = !string.IsNullOrWhiteSpace(displayName) ? displayName : gameObject.name;
+
+        return nombre.IndexOf("Diamond", StringComparison.OrdinalIgnoreCase) >= 0
+            || nombre.IndexOf("Diamante", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private void CentrarVisualEn(Vector3 posicionObjetivo)
+    {
+        if (!TryGetRendererBounds(out Bounds bounds))
+        {
+            return;
+        }
+
+        transform.position += posicionObjetivo - bounds.center;
+    }
+
+    private bool TryGetRendererBounds(out Bounds bounds)
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        bounds = new Bounds(transform.position, Vector3.zero);
+        bool hasBounds = false;
+
+        foreach (Renderer rendererActual in renderers)
+        {
+            if (rendererActual == null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = rendererActual.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(rendererActual.bounds);
+            }
+        }
+
+        return hasBounds;
     }
 
     #pragma warning disable 0618
@@ -286,4 +371,3 @@ public class MemoryGem : MonoBehaviour
         }
     }
 }
-

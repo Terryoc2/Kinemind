@@ -110,6 +110,7 @@ public class PanelPrincipalManager : MonoBehaviour
     public Transform puntoJugadorNivel2;
     public Transform puntoPanelNivel2;
     public bool colocarPanelFrenteAlJugador = true;
+    public bool invertirFrentePanelNivel2 = true;
     public float distanciaPanelNivel2 = 1.8f;
     public float alturaPanelNivel2 = -0.35f;
     public float segundosEntreCuenta = 1f;
@@ -593,6 +594,50 @@ public class PanelPrincipalManager : MonoBehaviour
         rutinaTransicionNivel2 = StartCoroutine(TransicionarAlNivel2());
     }
 
+    [ContextMenu("Prueba/Ir rapido al Nivel 2")]
+    public void IrRapidoNivel2ParaPrueba()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("El salto rapido al Nivel 2 solo debe usarse en Play.");
+            return;
+        }
+
+        if (rutinaContinuar != null)
+        {
+            StopCoroutine(rutinaContinuar);
+            rutinaContinuar = null;
+        }
+
+        if (rutinaTransicionNivel2 != null)
+        {
+            StopCoroutine(rutinaTransicionNivel2);
+            rutinaTransicionNivel2 = null;
+        }
+
+        transicionandoNivel = false;
+        accionPokeEnProceso = false;
+        actividadIniciada = false;
+        actividadCompletada = false;
+
+        if (nivel1Manager != null)
+        {
+            nivel1Manager.OcultarNivel();
+        }
+
+        panelNivel2Colocado = false;
+        TeletransportarAlNivel2();
+        ColocarPanelNivel2();
+        PrepararNivel2Dibujo();
+
+        if (nivel2DibujoManager != null)
+        {
+            nivel2DibujoManager.OcultarNivel();
+        }
+
+        MostrarInicioNivel2();
+    }
+
     private IEnumerator TransicionarAlNivel2()
     {
         transicionandoNivel = true;
@@ -745,7 +790,7 @@ public class PanelPrincipalManager : MonoBehaviour
         Vector3 panelPosition = mainCamera.transform.position + forward * Mathf.Max(1.2f, distanciaComoda);
         panelPosition.y = mainCamera.transform.position.y + alturaComoda;
 
-        Quaternion panelRotation = Quaternion.LookRotation(-forward, Vector3.up);
+        Quaternion panelRotation = CalcularRotacionPanelHaciaJugador(panelPosition, Quaternion.LookRotation(-forward, Vector3.up));
         MoverPanelInteractuable(panelPosition, panelRotation);
         return true;
     }
@@ -759,13 +804,39 @@ public class PanelPrincipalManager : MonoBehaviour
 
         if (puntoPanelNivel2 != null)
         {
-            MoverPanelInteractuable(puntoPanelNivel2.position, puntoPanelNivel2.rotation);
+            Quaternion panelRotation = colocarPanelFrenteAlJugador
+                ? CalcularRotacionPanelHaciaJugador(puntoPanelNivel2.position, puntoPanelNivel2.rotation)
+                : puntoPanelNivel2.rotation;
+
+            MoverPanelInteractuable(puntoPanelNivel2.position, panelRotation);
             panelNivel2Colocado = true;
         }
         else if (colocarPanelFrenteAlJugador)
         {
             panelNivel2Colocado = ColocarPanelFrenteAlJugador();
         }
+    }
+
+    private Quaternion CalcularRotacionPanelHaciaJugador(Vector3 panelPosition, Quaternion fallback)
+    {
+        Camera mainCamera = ObtenerCamaraVR();
+
+        if (mainCamera == null)
+        {
+            return fallback;
+        }
+
+        Vector3 haciaJugador = mainCamera.transform.position - panelPosition;
+        haciaJugador.y = 0f;
+
+        if (haciaJugador.sqrMagnitude < 0.001f)
+        {
+            return fallback;
+        }
+
+        haciaJugador.Normalize();
+        Vector3 frentePanel = invertirFrentePanelNivel2 ? -haciaJugador : haciaJugador;
+        return Quaternion.LookRotation(frentePanel, Vector3.up);
     }
 
     private void MoverPanelInteractuable(Vector3 position, Quaternion rotation)

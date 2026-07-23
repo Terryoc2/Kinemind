@@ -133,6 +133,18 @@ public class DrawingLevel2Manager : MonoBehaviour
     public Color colorActual = new Color(0.1f, 0.65f, 1f, 0.9f);
     public Color colorCompletado = new Color(0.15f, 1f, 0.35f, 0.85f);
 
+    [Header("Guia visual")]
+    public bool resaltarPuntoActual = true;
+    public float escalaPuntoActual = 1.45f;
+    public float escalaPuntoPendiente = 0.9f;
+    public float escalaPuntoCompletado = 0.8f;
+
+    [Header("Plumon")]
+    public bool limitarPlumonAlTablero = true;
+    public bool limitarPlumonSoloDuranteActividad = true;
+    public float separacionMinimaPlumonTablero = 0.015f;
+    public float distanciaMaximaParaLimitarPlumon = 0.18f;
+
     private readonly List<DrawingLevel2Checkpoint> puntos = new List<DrawingLevel2Checkpoint>();
     private PanelPrincipalManager panel;
     private Transform puntosRoot;
@@ -169,6 +181,11 @@ public class DrawingLevel2Manager : MonoBehaviour
         {
             RegistrarPorDistancia(punto);
         }
+    }
+
+    private void LateUpdate()
+    {
+        LimitarPlumonAlTablero();
     }
 
     public void AsignarPanel(PanelPrincipalManager panelPrincipal)
@@ -1046,15 +1063,73 @@ public class DrawingLevel2Manager : MonoBehaviour
             if (puntos[i].EstaCompletado)
             {
                 puntos[i].CambiarColor(colorCompletado);
+                AplicarEscalaPunto(puntos[i], escalaPuntoCompletado);
             }
             else if (i == puntoActual)
             {
                 puntos[i].CambiarColor(colorActual);
+                AplicarEscalaPunto(puntos[i], resaltarPuntoActual ? escalaPuntoActual : 1f);
             }
             else
             {
                 puntos[i].CambiarColor(colorPendiente);
+                AplicarEscalaPunto(puntos[i], resaltarPuntoActual ? escalaPuntoPendiente : 1f);
             }
+        }
+    }
+
+    private void AplicarEscalaPunto(DrawingLevel2Checkpoint punto, float escala)
+    {
+        if (punto == null)
+        {
+            return;
+        }
+
+        punto.transform.localScale = Vector3.one * Mathf.Max(0.01f, radioPunto * escala);
+    }
+
+    private void LimitarPlumonAlTablero()
+    {
+        if (!limitarPlumonAlTablero || tablero == null)
+        {
+            return;
+        }
+
+        if (limitarPlumonSoloDuranteActividad && !actividadActiva)
+        {
+            return;
+        }
+
+        Transform punta = ObtenerPuntaMarcador();
+
+        if (punta == null || marcador == null)
+        {
+            return;
+        }
+
+        if (!ObtenerPlanoTablero(out Vector3 centro, out Vector3 normal, out Vector3 horizontal, out Vector3 vertical, out float mitadAncho, out float mitadAlto))
+        {
+            return;
+        }
+
+        float distanciaFirmada = Vector3.Dot(punta.position - centro, normal);
+        float distanciaMaxima = Mathf.Max(separacionMinimaPlumonTablero + 0.01f, distanciaMaximaParaLimitarPlumon);
+
+        if (Mathf.Abs(distanciaFirmada) > distanciaMaxima || distanciaFirmada >= separacionMinimaPlumonTablero)
+        {
+            return;
+        }
+
+        Vector3 ajuste = normal * (separacionMinimaPlumonTablero - distanciaFirmada);
+        Rigidbody rigidbodyMarcador = marcador.GetComponent<Rigidbody>();
+
+        if (rigidbodyMarcador != null && !rigidbodyMarcador.isKinematic)
+        {
+            rigidbodyMarcador.MovePosition(rigidbodyMarcador.position + ajuste);
+        }
+        else
+        {
+            marcador.position += ajuste;
         }
     }
 

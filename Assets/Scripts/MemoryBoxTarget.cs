@@ -20,6 +20,11 @@ public class MemoryBoxTarget : MonoBehaviour
     public bool asegurarTriggerDeteccion = true;
     public Vector3 triggerSize = new Vector3(0.55f, 0.35f, 0.55f);
     public Vector3 triggerCenter = new Vector3(0f, 0.15f, 0f);
+    public bool usarColliderExistenteComoTrigger = true;
+    public bool centrarSnapAutomaticoEnCollider = true;
+    public bool filtrarCercaniaSiSnapEsAutomatico = true;
+    public float distanciaMaximaAlColocar = 0.28f;
+    public Vector3 snapAutomaticoLocal = new Vector3(0f, 0.15f, 0f);
 
     [Header("Colores")]
     public Color normalColor = Color.white;
@@ -33,13 +38,14 @@ public class MemoryBoxTarget : MonoBehaviour
     private Material feedbackMaterial;
     private Coroutine wrongRoutine;
     private float nextCheckTime;
+    private bool snapAutomatico;
     private const float RepeatCheckDelay = 0.25f;
 
     private void Awake()
     {
         if (snapPoint == null)
         {
-            snapPoint = transform;
+            CrearSnapAutomatico();
         }
 
         if (feedbackRenderer != null)
@@ -93,6 +99,11 @@ public class MemoryBoxTarget : MonoBehaviour
             return;
         }
 
+        if (!PuedeColocarseAqui(gem))
+        {
+            return;
+        }
+
         nextCheckTime = Time.time + RepeatCheckDelay;
         manager.IntentarColocar(this, gem);
     }
@@ -102,6 +113,11 @@ public class MemoryBoxTarget : MonoBehaviour
         manager = levelManager;
         expectedGem = gem;
         solved = false;
+
+        if (snapPoint == null)
+        {
+            CrearSnapAutomatico();
+        }
 
         if (asegurarTriggerDeteccion)
         {
@@ -186,6 +202,7 @@ public class MemoryBoxTarget : MonoBehaviour
     private void AsegurarTriggerDeteccion()
     {
         Collider[] colliders = GetComponents<Collider>();
+        BoxCollider primerBoxCollider = null;
 
         foreach (Collider collider in colliders)
         {
@@ -194,6 +211,18 @@ public class MemoryBoxTarget : MonoBehaviour
                 collider.enabled = true;
                 return;
             }
+
+            if (primerBoxCollider == null)
+            {
+                primerBoxCollider = collider as BoxCollider;
+            }
+        }
+
+        if (usarColliderExistenteComoTrigger && primerBoxCollider != null)
+        {
+            primerBoxCollider.isTrigger = true;
+            primerBoxCollider.enabled = true;
+            return;
         }
 
         BoxCollider trigger = gameObject.AddComponent<BoxCollider>();
@@ -201,6 +230,111 @@ public class MemoryBoxTarget : MonoBehaviour
         trigger.size = triggerSize;
         trigger.center = triggerCenter;
         trigger.enabled = true;
+    }
+
+    private void CrearSnapAutomatico()
+    {
+        snapAutomatico = true;
+
+        Transform existente = transform.Find("SnapPoint_Auto");
+
+        if (existente != null)
+        {
+            snapPoint = existente;
+            return;
+        }
+
+        GameObject autoSnap = new GameObject("SnapPoint_Auto");
+        autoSnap.transform.SetParent(transform, false);
+        autoSnap.transform.localPosition = ObtenerPosicionSnapAutomatico();
+        autoSnap.transform.localRotation = Quaternion.identity;
+        snapPoint = autoSnap.transform;
+    }
+
+    private Vector3 ObtenerPosicionSnapAutomatico()
+    {
+        if (!centrarSnapAutomaticoEnCollider)
+        {
+            return snapAutomaticoLocal;
+        }
+
+        Collider collider = GetComponent<Collider>();
+
+        if (collider is BoxCollider boxCollider)
+        {
+            return boxCollider.center;
+        }
+
+        return snapAutomaticoLocal;
+    }
+
+    private bool PuedeColocarseAqui(MemoryGem gem)
+    {
+        if (!filtrarCercaniaSiSnapEsAutomatico || !snapAutomatico || gem == null || snapPoint == null)
+        {
+            return true;
+        }
+
+        float limite = Mathf.Max(0.01f, distanciaMaximaAlColocar);
+        return EstaCercaDelSnap(gem, limite);
+    }
+
+    private bool EstaCercaDelSnap(MemoryGem gem, float limite)
+    {
+        Collider[] colliders = gem.GetComponentsInChildren<Collider>(true);
+        bool tieneCollider = false;
+
+        foreach (Collider colliderFigura in colliders)
+        {
+            if (colliderFigura == null || !colliderFigura.enabled)
+            {
+                continue;
+            }
+
+            tieneCollider = true;
+
+            Vector3 puntoMasCercano = colliderFigura.ClosestPoint(snapPoint.position);
+
+            if (Vector3.Distance(puntoMasCercano, snapPoint.position) <= limite)
+            {
+                return true;
+            }
+        }
+
+        if (!tieneCollider)
+        {
+            Vector3 centroFigura = ObtenerCentroVisual(gem);
+            return Vector3.Distance(centroFigura, snapPoint.position) <= limite;
+        }
+
+        return false;
+    }
+
+    private Vector3 ObtenerCentroVisual(MemoryGem gem)
+    {
+        Renderer[] renderers = gem.GetComponentsInChildren<Renderer>(true);
+        bool tieneBounds = false;
+        Bounds bounds = new Bounds(gem.transform.position, Vector3.zero);
+
+        foreach (Renderer rendererFigura in renderers)
+        {
+            if (rendererFigura == null)
+            {
+                continue;
+            }
+
+            if (!tieneBounds)
+            {
+                bounds = rendererFigura.bounds;
+                tieneBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(rendererFigura.bounds);
+            }
+        }
+
+        return tieneBounds ? bounds.center : gem.transform.position;
     }
 
     private void SetReferenceVisible(bool visible)

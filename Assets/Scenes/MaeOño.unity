@@ -6761,6 +6761,11 @@ MonoBehaviour:
   asegurarTriggerDeteccion: 1
   triggerSize: {x: 0.55, y: 0.35, z: 0.55}
   triggerCenter: {x: 0, y: 0.15, z: 0}
+  usarColliderExistenteComoTrigger: 1
+  centrarSnapAutomaticoEnCollider: 1
+  filtrarCercaniaSiSnapEsAutomatico: 1
+  distanciaMaximaAlColocar: 0.28
+  snapAutomaticoLocal: {x: 0, y: 0.15, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   wrongColor: {r: 1, g: 0, b: 0, a: 1}
@@ -22094,6 +22099,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!65 &485654852
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -28684,6 +28694,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!135 &654950232
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -28912,6 +28927,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!65 &674250808
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -30724,6 +30744,11 @@ MonoBehaviour:
   asegurarTriggerDeteccion: 1
   triggerSize: {x: 0.55, y: 0.35, z: 0.55}
   triggerCenter: {x: 0, y: 0.15, z: 0}
+  usarColliderExistenteComoTrigger: 1
+  centrarSnapAutomaticoEnCollider: 1
+  filtrarCercaniaSiSnapEsAutomatico: 1
+  distanciaMaximaAlColocar: 0.28
+  snapAutomaticoLocal: {x: 0, y: 0.15, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   wrongColor: {r: 1, g: 0, b: 0, a: 1}
@@ -31684,6 +31709,11 @@ MonoBehaviour:
   asegurarTriggerDeteccion: 1
   triggerSize: {x: 0.55, y: 0.35, z: 0.55}
   triggerCenter: {x: 0, y: 0.15, z: 0}
+  usarColliderExistenteComoTrigger: 1
+  centrarSnapAutomaticoEnCollider: 1
+  filtrarCercaniaSiSnapEsAutomatico: 1
+  distanciaMaximaAlColocar: 0.28
+  snapAutomaticoLocal: {x: 0, y: 0.15, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   wrongColor: {r: 1, g: 0, b: 0, a: 1}
@@ -33681,6 +33711,7 @@ MonoBehaviour:
   puntoJugadorNivel2: {fileID: 1655833579}
   puntoPanelNivel2: {fileID: 0}
   colocarPanelFrenteAlJugador: 1
+  invertirFrentePanelNivel2: 1
   distanciaPanelNivel2: 2
   alturaPanelNivel2: 0
   segundosEntreCuenta: 1
@@ -34477,6 +34508,11 @@ MonoBehaviour:
   asegurarTriggerDeteccion: 1
   triggerSize: {x: 0.55, y: 0.35, z: 0.55}
   triggerCenter: {x: 0, y: 0.15, z: 0}
+  usarColliderExistenteComoTrigger: 1
+  centrarSnapAutomaticoEnCollider: 1
+  filtrarCercaniaSiSnapEsAutomatico: 1
+  distanciaMaximaAlColocar: 0.28
+  snapAutomaticoLocal: {x: 0, y: 0.15, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   wrongColor: {r: 1, g: 0, b: 0, a: 1}
@@ -37840,37 +37876,37 @@ PrefabInstance:
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.6579866
+      value: -1.054
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.5255477
+      value: -2.168
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.08
+      value: 5.163
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: -0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
@@ -37880,7 +37916,7 @@ PrefabInstance:
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: -90
       objectReference: {fileID: 0}
     - target: {fileID: 7110788338594629494, guid: 6023e4bcf9fed1e4a81eb4604ff95987,
         type: 3}
@@ -48355,6 +48391,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!65 &1280448166
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -54941,6 +54982,11 @@ MonoBehaviour:
   asegurarTriggerDeteccion: 1
   triggerSize: {x: 0.55, y: 0.35, z: 0.55}
   triggerCenter: {x: 0, y: 0.15, z: 0}
+  usarColliderExistenteComoTrigger: 1
+  centrarSnapAutomaticoEnCollider: 1
+  filtrarCercaniaSiSnapEsAutomatico: 1
+  distanciaMaximaAlColocar: 0.28
+  snapAutomaticoLocal: {x: 0, y: 0.15, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   wrongColor: {r: 1, g: 0, b: 0, a: 1}
@@ -64607,6 +64653,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!114 &1791775018
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66238,6 +66289,14 @@ MonoBehaviour:
   colorPendiente: {r: 1, g: 0.85, b: 0.15, a: 0.85}
   colorActual: {r: 0.1, g: 0.65, b: 1, a: 0.9}
   colorCompletado: {r: 0.15, g: 1, b: 0.35, a: 0.85}
+  resaltarPuntoActual: 1
+  escalaPuntoActual: 1.45
+  escalaPuntoPendiente: 0.9
+  escalaPuntoCompletado: 0.8
+  limitarPlumonAlTablero: 1
+  limitarPlumonSoloDuranteActividad: 1
+  separacionMinimaPlumonTablero: 0.015
+  distanciaMaximaParaLimitarPlumon: 0.18
 --- !u!65 &1827959586
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -71104,6 +71163,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!54 &1979339516
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -72680,6 +72744,11 @@ MonoBehaviour:
   manager: {fileID: 6232869}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!1 &2033080473
 GameObject:
   m_ObjectHideFlags: 0
@@ -75999,7 +76068,7 @@ MonoBehaviour:
   calibrationSecondsRemaining: 0
   calibrationOffset: {x: 0, y: 0, z: 0}
   calibrationSampleCount: 0
-  usarDosBandas: 1
+  usarDosBandas: 0
   staleSecondsUnity: 1.5
   dataTextBanda1: {fileID: 0}
   dataTextBanda2: {fileID: 0}
@@ -90755,6 +90824,11 @@ MonoBehaviour:
   manager: {fileID: 0}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!1 &4644217394974657050
 GameObject:
   m_ObjectHideFlags: 0
@@ -92567,6 +92641,11 @@ MonoBehaviour:
   manager: {fileID: 0}
   objectToHide: {fileID: 0}
   bloquearAgarreAlColocar: 1
+  offsetLocalAlColocar: {x: 0, y: 0, z: 0}
+  rotacionLocalAlColocar: {x: 0, y: 0, z: 0}
+  centrarVisualAlColocar: 0
+  centrarVisualAutomaticoDiamante: 1
+  congelarFisicaAlColocar: 1
 --- !u!33 &5194306288330308981
 MeshFilter:
   m_ObjectHideFlags: 0
